@@ -35,6 +35,8 @@ export type AppConfig = {
   search_brave_key: string;
   search_tavily_key: string;
   search_http_allowlist: string;
+  search_searxng_url: string;
+  search_provider: string;
   mqtt_enabled: string;
   mqtt_broker: string;
   mqtt_port: string;
@@ -91,7 +93,13 @@ export const GROUP_FIELDS: Record<ConfigGroup, (keyof AppConfig)[]> = {
     'wechat_cdn_base_url',
     'wechat_account_id',
   ],
-  search: ['search_brave_key', 'search_tavily_key', 'search_http_allowlist'],
+  search: [
+    'search_brave_key',
+    'search_tavily_key',
+    'search_http_allowlist',
+    'search_searxng_url',
+    'search_provider',
+  ],
   mqtt: [
     'mqtt_enabled',
     'mqtt_broker',

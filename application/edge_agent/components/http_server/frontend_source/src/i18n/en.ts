@@ -182,6 +182,11 @@ export const en = {
 
   sectionWebReqSearch: 'Search',
   webreqSearchNote: 'Optional. If set, ESP-Claw can search online.',
+  searchProvider: 'Search provider',
+  searchProviderAuto: 'Auto (SearXNG › Tavily › Brave)',
+  searchProviderHint: 'Auto picks a configured provider; choose one to force it.',
+  searchSearxngUrl: 'SearXNG base URL',
+  searchSearxngUrlHint: 'Self-hosted SearXNG (JSON API). Reach plain-HTTP instances only over a trusted network/VPN.',
   sectionWebReqNetwork: 'Network Requests',
   webreqBraveKey: 'Brave Search API Key',
   webreqTavilyKey: 'Tavily API Key',

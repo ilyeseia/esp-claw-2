@@ -706,6 +706,16 @@ static esp_err_t app_cap_prepare_web_search(const app_claw_config_t *config,
                             TAG, "Failed to set Tavily search key");
     }
 
+    if (config->search_searxng_url[0]) {
+        ESP_RETURN_ON_ERROR(cap_web_search_set_searxng_url(config->search_searxng_url),
+                            TAG, "Failed to set SearXNG URL");
+    }
+
+    if (config->search_provider[0]) {
+        ESP_RETURN_ON_ERROR(cap_web_search_set_provider(config->search_provider),
+                            TAG, "Failed to set search provider");
+    }
+
     return ESP_OK;
 }
 

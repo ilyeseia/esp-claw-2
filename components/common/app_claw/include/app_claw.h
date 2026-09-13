@@ -49,6 +49,8 @@ typedef struct {
     char search_brave_key[APP_CLAW_STR_LEN];
     char search_tavily_key[APP_CLAW_STR_LEN];
     char search_http_allowlist[APP_CLAW_STR_LEN];
+    char search_searxng_url[APP_CLAW_STR_LEN];
+    char search_provider[16];
     char mqtt_enabled[8];
     char mqtt_broker[APP_CLAW_STR_LEN];
     char mqtt_port[16];

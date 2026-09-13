@@ -5,7 +5,7 @@ import { createConfigTab } from '../state/configTab';
 import { TabShell } from '../components/layout/TabShell';
 import { PageHeader } from '../components/ui/PageHeader';
 import { StaticConfigBlock } from '../components/ui/ConfigBlocks';
-import { TextInput } from '../components/ui/FormField';
+import { TextInput, SelectInput } from '../components/ui/FormField';
 import { LabelLink } from '../components/ui/LabelLink';
 import { SavePanel } from '../components/ui/SavePanel';
 import { Banner } from '../components/ui/Banner';
@@ -13,6 +13,8 @@ import { RestartConfirmModal } from '../components/system/RestartConfirmModal';
 import { BRAVE_API_KEY_URL, TAVILY_API_KEY_URL } from '../constants/externalLinks';
 
 type WebReqForm = {
+  search_provider: string;
+  search_searxng_url: string;
   search_brave_key: string;
   search_tavily_key: string;
   search_http_allowlist: string;
@@ -23,11 +25,15 @@ export const WebReqPage: Component<{ onRestartRequest: () => void }> = (props) =
     tab: 'webreq',
     groups: ['search'],
     toForm: (config: Partial<AppConfig>) => ({
+      search_provider: config.search_provider ?? 'auto',
+      search_searxng_url: config.search_searxng_url ?? '',
       search_brave_key: config.search_brave_key ?? '',
       search_tavily_key: config.search_tavily_key ?? '',
       search_http_allowlist: config.search_http_allowlist ?? '',
     }),
     fromForm: (form) => ({
+      search_provider: form.search_provider,
+      search_searxng_url: form.search_searxng_url.trim(),
       search_brave_key: form.search_brave_key.trim(),
       search_tavily_key: form.search_tavily_key.trim(),
       search_http_allowlist: form.search_http_allowlist.trim(),
@@ -50,6 +56,26 @@ export const WebReqPage: Component<{ onRestartRequest: () => void }> = (props) =
       </Show>
       <div class="divide-y divide-[var(--color-border-subtle)] mt-2">
         <StaticConfigBlock title={t('sectionWebReqSearch') as string}>
+          <div class="grid gap-3 sm:grid-cols-2 pt-2">
+            <SelectInput
+              label={t('searchProvider') as string}
+              hint={t('searchProviderHint') as string}
+              value={tab.form.search_provider}
+              onChange={(event) => tab.setForm('search_provider', event.currentTarget.value)}
+            >
+              <option value="auto">{t('searchProviderAuto') as string}</option>
+              <option value="searxng">SearXNG</option>
+              <option value="tavily">Tavily</option>
+              <option value="brave">Brave</option>
+            </SelectInput>
+            <TextInput
+              label={t('searchSearxngUrl') as string}
+              placeholder="http://searxng.example.ts.net"
+              hint={t('searchSearxngUrlHint') as string}
+              value={tab.form.search_searxng_url}
+              onInput={(event) => tab.setForm('search_searxng_url', event.currentTarget.value)}
+            />
+          </div>
           <div class="grid gap-3 sm:grid-cols-2 pt-2">
             <TextInput
               type="password"

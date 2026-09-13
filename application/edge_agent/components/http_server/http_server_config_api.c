@@ -69,6 +69,8 @@ static const config_field_def_t CONFIG_FIELDS[] = {
     CONFIG_FIELD("search",       search_brave_key),
     CONFIG_FIELD("search",       search_tavily_key),
     CONFIG_FIELD("search",       search_http_allowlist),
+    CONFIG_FIELD("search",       search_searxng_url),
+    CONFIG_FIELD("search",       search_provider),
 
     CONFIG_FIELD("mqtt",         mqtt_enabled),
     CONFIG_FIELD("mqtt",         mqtt_broker),
@@ -375,6 +377,18 @@ static esp_err_t config_post_handler(httpd_req_t *req)
             return httpd_resp_send_err(req,
                                        HTTPD_400_BAD_REQUEST,
                                        "mqtt_port and mqtt_keepalive must be positive integers");
+        }
+        if (strcmp(field->name, "search_provider") == 0 &&
+                item->valuestring[0] != '\0' &&
+                strcmp(item->valuestring, "auto") != 0 &&
+                strcmp(item->valuestring, "brave") != 0 &&
+                strcmp(item->valuestring, "tavily") != 0 &&
+                strcmp(item->valuestring, "searxng") != 0) {
+            cJSON_Delete(root);
+            free(config);
+            return httpd_resp_send_err(req,
+                                       HTTPD_400_BAD_REQUEST,
+                                       "search_provider must be auto, brave, tavily or searxng");
         }
         if (strcmp(field->name, "mqtt_qos") == 0 &&
                 item->valuestring[0] != '\0' &&

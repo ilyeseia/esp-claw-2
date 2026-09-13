@@ -57,6 +57,8 @@ typedef struct {
 #define APP_DEFAULT_WECHAT_ACCOUNT_ID        "default"
 #define APP_DEFAULT_SEARCH_BRAVE_KEY         ""
 #define APP_DEFAULT_SEARCH_TAVILY_KEY        ""
+#define APP_DEFAULT_SEARCH_SEARXNG_URL       ""
+#define APP_DEFAULT_SEARCH_PROVIDER          "auto"
 #define APP_DEFAULT_MQTT_ENABLED             "false"
 #define APP_DEFAULT_MQTT_BROKER              ""
 #define APP_DEFAULT_MQTT_PORT                "1883"
@@ -103,6 +105,8 @@ static const app_config_field_t s_fields[] = {
     APP_CONFIG_FIELD(search_brave_key, "brave_key", APP_DEFAULT_SEARCH_BRAVE_KEY),
     APP_CONFIG_FIELD(search_tavily_key, "tavily_key", APP_DEFAULT_SEARCH_TAVILY_KEY),
     APP_CONFIG_FIELD(search_http_allowlist, "http_allow_ls", APP_SEARCH_HTTP_ALLOWLIST),
+    APP_CONFIG_FIELD(search_searxng_url, "searxng_url", APP_DEFAULT_SEARCH_SEARXNG_URL),
+    APP_CONFIG_FIELD(search_provider, "search_prov", APP_DEFAULT_SEARCH_PROVIDER),
     APP_CONFIG_FIELD(mqtt_enabled, "mqtt_en", APP_DEFAULT_MQTT_ENABLED),
     APP_CONFIG_FIELD(mqtt_broker, "mqtt_broker", APP_DEFAULT_MQTT_BROKER),
     APP_CONFIG_FIELD(mqtt_port, "mqtt_port", APP_DEFAULT_MQTT_PORT),
@@ -604,6 +608,8 @@ void app_config_to_claw(const app_config_t *config, app_claw_config_t *out)
     strlcpy(out->search_http_allowlist,
             config->search_http_allowlist,
             sizeof(out->search_http_allowlist));
+    strlcpy(out->search_searxng_url, config->search_searxng_url, sizeof(out->search_searxng_url));
+    strlcpy(out->search_provider, config->search_provider, sizeof(out->search_provider));
     strlcpy(out->mqtt_enabled, config->mqtt_enabled, sizeof(out->mqtt_enabled));
     strlcpy(out->mqtt_broker, config->mqtt_broker, sizeof(out->mqtt_broker));
     strlcpy(out->mqtt_port, config->mqtt_port, sizeof(out->mqtt_port));

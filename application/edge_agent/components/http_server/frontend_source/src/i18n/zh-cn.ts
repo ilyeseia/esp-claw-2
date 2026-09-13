@@ -177,6 +177,11 @@ export const zhCn: Dict = {
 
   sectionWebReqSearch: '搜索',
   webreqSearchNote: '可选。如填写，ESP-Claw 可在运行中检索在线资源。',
+  searchProvider: '搜索提供方',
+  searchProviderAuto: '自动（SearXNG › Tavily › Brave）',
+  searchProviderHint: '自动会选择已配置的提供方；也可强制指定其一。',
+  searchSearxngUrl: 'SearXNG 基础 URL',
+  searchSearxngUrlHint: '自托管 SearXNG（JSON API）。明文 HTTP 实例仅应通过可信网络/VPN 访问。',
   sectionWebReqNetwork: '网络请求',
   webreqBraveKey: 'Brave Search API Key',
   webreqTavilyKey: 'Tavily API Key',
