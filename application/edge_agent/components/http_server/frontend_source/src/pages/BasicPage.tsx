@@ -93,7 +93,7 @@ export const BasicPage: Component<{ onRestartRequest: () => void }> = (props) =>
   const timezoneHint = () =>
     currentLocale() === 'zh-cn' ? (
       <>
-        仅接受 POSIX TZ 字符串，符号与日常 UTC 表示相反。北京时间（UTC+8）应写作 "CST-8"
+        仅接受 POSIX TZ 字符串，符号与日常 UTC 表示相反。阿尔及利亚（UTC+1）应写作 "CET-1"
         ，纽约（UTC-5）写作 "EST5"。可在
         <a
           href="https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv"

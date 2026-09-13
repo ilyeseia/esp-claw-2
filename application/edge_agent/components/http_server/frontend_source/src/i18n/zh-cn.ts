@@ -238,9 +238,9 @@ export const zhCn: Dict = {
 
   sectionAdvanced: '高级设置',
   timezone: '时区',
-  timezonePlaceholder: '例如 CST-8（北京时间）或 UTC0',
+  timezonePlaceholder: '例如 CET-1（阿尔及利亚）或 UTC0',
   timezoneHelp:
-    '仅接受 POSIX TZ 字符串，符号与日常 UTC 表示相反。北京时间（UTC+8）应写作 "CST-8"，纽约（UTC-5）写作 "EST5"。可在此表格查阅 IANA 时区与 POSIX 表达转换关系。',
+    '仅接受 POSIX TZ 字符串，符号与日常 UTC 表示相反。阿尔及利亚（UTC+1）应写作 "CET-1"，纽约（UTC-5）写作 "EST5"。可在此表格查阅 IANA 时区与 POSIX 表达转换关系。',
 
   memoryTitle: '记忆文件',
   memoryDescription: '管理设备记忆文件。',

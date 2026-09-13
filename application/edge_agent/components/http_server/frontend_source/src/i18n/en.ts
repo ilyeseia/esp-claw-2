@@ -246,9 +246,9 @@ export const en = {
 
   sectionAdvanced: 'Advanced Settings',
   timezone: 'Timezone',
-  timezonePlaceholder: 'e.g. CST-8 (Beijing) or UTC0',
+  timezonePlaceholder: 'e.g. CET-1 (Algeria) or UTC0',
   timezoneHelp:
-    "POSIX TZ string only. The sign is INVERTED relative to common UTC notation: Beijing (UTC+8) must be written as 'CST-8'; New York (UTC-5) is 'EST5'. Names like 'Asia/Shanghai' will NOT work — please convert manually.",
+    "POSIX TZ string only. The sign is INVERTED relative to common UTC notation: Algeria (UTC+1) must be written as 'CET-1'; New York (UTC-5) is 'EST5'. Names like 'Africa/Algiers' will NOT work — please convert manually.",
 
   memoryTitle: 'Memory Files',
   memoryDescription: 'Manage the device memory files.',
