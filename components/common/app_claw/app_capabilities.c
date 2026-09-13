@@ -64,6 +64,9 @@
 #if CONFIG_APP_CLAW_CAP_WEB_SEARCH
 #include "cap_web_search.h"
 #endif
+#if CONFIG_APP_CLAW_CAP_MQTT
+#include "cap_mqtt.h"
+#endif
 #include "claw_cap.h"
 #if CONFIG_APP_CLAW_CAP_MEMORY
 #include "claw_memory.h"
@@ -715,6 +718,42 @@ static esp_err_t app_cap_register_web_search(const app_claw_config_t *config,
 }
 #endif
 
+#if CONFIG_APP_CLAW_CAP_MQTT
+static bool app_cap_config_bool(const char *value)
+{
+    return value && (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
+}
+
+static esp_err_t app_cap_prepare_mqtt(const app_claw_config_t *config,
+                                      const app_claw_storage_paths_t *paths)
+{
+    (void)paths;
+
+    cap_mqtt_config_t mqtt_cfg = {
+        .enabled = app_cap_config_bool(config->mqtt_enabled),
+        .broker = config->mqtt_broker,
+        .port = (uint16_t)atoi(config->mqtt_port),
+        .tls_enabled = app_cap_config_bool(config->mqtt_tls_enabled),
+        .username = config->mqtt_username,
+        .password = config->mqtt_password,
+        .client_id = config->mqtt_client_id,
+        .keepalive = (uint16_t)atoi(config->mqtt_keepalive),
+        .qos = (uint8_t)atoi(config->mqtt_qos),
+        .base_topic = config->mqtt_base_topic,
+    };
+
+    return cap_mqtt_set_config(&mqtt_cfg);
+}
+
+static esp_err_t app_cap_register_mqtt(const app_claw_config_t *config,
+                                       const app_claw_storage_paths_t *paths)
+{
+    (void)config;
+    (void)paths;
+    return cap_mqtt_register_group();
+}
+#endif
+
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
 static esp_err_t app_cap_register_router_mgr(const app_claw_config_t *config,
                                              const app_claw_storage_paths_t *paths)
@@ -794,6 +833,9 @@ static const app_capability_group_entry_t s_capability_group_entries[] = {
 #if CONFIG_APP_CLAW_CAP_WEB_SEARCH
     { "cap_web_search", "Web Search", "Register web search cap", true, app_cap_prepare_web_search, app_cap_register_web_search },
 #endif
+#if CONFIG_APP_CLAW_CAP_MQTT
+    { "cap_mqtt", "MQTT", "Register MQTT cap", false, app_cap_prepare_mqtt, app_cap_register_mqtt },
+#endif
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
     { "cap_router_mgr", "Router Manager", "Register router manager cap", true, NULL, app_cap_register_router_mgr },
 #endif
@@ -850,6 +892,9 @@ static const app_capability_group_info_t s_capability_group_infos[] = {
 #endif
 #if CONFIG_APP_CLAW_CAP_WEB_SEARCH
     { "cap_web_search", "Web Search", false },
+#endif
+#if CONFIG_APP_CLAW_CAP_MQTT
+    { "cap_mqtt", "MQTT", false },
 #endif
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
     { "cap_router_mgr", "Router Manager", false },

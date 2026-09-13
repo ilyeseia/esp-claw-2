@@ -70,6 +70,17 @@ static const config_field_def_t CONFIG_FIELDS[] = {
     CONFIG_FIELD("search",       search_tavily_key),
     CONFIG_FIELD("search",       search_http_allowlist),
 
+    CONFIG_FIELD("mqtt",         mqtt_enabled),
+    CONFIG_FIELD("mqtt",         mqtt_broker),
+    CONFIG_FIELD("mqtt",         mqtt_port),
+    CONFIG_FIELD("mqtt",         mqtt_tls_enabled),
+    CONFIG_FIELD("mqtt",         mqtt_username),
+    CONFIG_FIELD("mqtt",         mqtt_password),
+    CONFIG_FIELD("mqtt",         mqtt_client_id),
+    CONFIG_FIELD("mqtt",         mqtt_keepalive),
+    CONFIG_FIELD("mqtt",         mqtt_qos),
+    CONFIG_FIELD("mqtt",         mqtt_base_topic),
+
     CONFIG_FIELD("capabilities", enabled_cap_groups),
     CONFIG_FIELD("capabilities", llm_visible_cap_groups),
 
@@ -344,6 +355,36 @@ static esp_err_t config_post_handler(httpd_req_t *req)
             return httpd_resp_send_err(req,
                                        HTTPD_400_BAD_REQUEST,
                                        "LLM boolean fields must be true/false");
+        }
+        if ((strcmp(field->name, "mqtt_enabled") == 0 ||
+                strcmp(field->name, "mqtt_tls_enabled") == 0) &&
+                item->valuestring[0] != '\0' &&
+                !is_boolean_string(item->valuestring)) {
+            cJSON_Delete(root);
+            free(config);
+            return httpd_resp_send_err(req,
+                                       HTTPD_400_BAD_REQUEST,
+                                       "MQTT boolean fields must be true/false");
+        }
+        if ((strcmp(field->name, "mqtt_port") == 0 ||
+                strcmp(field->name, "mqtt_keepalive") == 0) &&
+                item->valuestring[0] != '\0' &&
+                !is_positive_decimal_string(item->valuestring)) {
+            cJSON_Delete(root);
+            free(config);
+            return httpd_resp_send_err(req,
+                                       HTTPD_400_BAD_REQUEST,
+                                       "mqtt_port and mqtt_keepalive must be positive integers");
+        }
+        if (strcmp(field->name, "mqtt_qos") == 0 &&
+                item->valuestring[0] != '\0' &&
+                strcmp(item->valuestring, "0") != 0 &&
+                strcmp(item->valuestring, "1") != 0) {
+            cJSON_Delete(root);
+            free(config);
+            return httpd_resp_send_err(req,
+                                       HTTPD_400_BAD_REQUEST,
+                                       "mqtt_qos must be 0 or 1");
         }
         strlcpy(field_mutable(config, field), item->valuestring, field->size);
         applied_count++;

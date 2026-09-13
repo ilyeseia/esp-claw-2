@@ -49,6 +49,16 @@ typedef struct {
     char search_brave_key[APP_CLAW_STR_LEN];
     char search_tavily_key[APP_CLAW_STR_LEN];
     char search_http_allowlist[APP_CLAW_STR_LEN];
+    char mqtt_enabled[8];
+    char mqtt_broker[APP_CLAW_STR_LEN];
+    char mqtt_port[16];
+    char mqtt_tls_enabled[8];
+    char mqtt_username[APP_CLAW_STR_LEN];
+    char mqtt_password[APP_CLAW_STR_LEN];
+    char mqtt_client_id[APP_CLAW_MODEL_LEN];
+    char mqtt_keepalive[16];
+    char mqtt_qos[16];
+    char mqtt_base_topic[APP_CLAW_MODEL_LEN];
     char asr_provider[APP_CLAW_SHORT_STR_LEN];
     char asr_api_key[APP_CLAW_STR_LEN];
     char asr_workspace_id[APP_CLAW_STR_LEN];

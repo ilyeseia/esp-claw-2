@@ -50,6 +50,16 @@ typedef struct {
     char search_brave_key[APP_CONFIG_STR_LEN];
     char search_tavily_key[APP_CONFIG_STR_LEN];
     char search_http_allowlist[APP_CONFIG_STR_LEN];
+    char mqtt_enabled[8];
+    char mqtt_broker[APP_CONFIG_STR_LEN];
+    char mqtt_port[16];
+    char mqtt_tls_enabled[8];
+    char mqtt_username[APP_CONFIG_STR_LEN];
+    char mqtt_password[APP_CONFIG_STR_LEN];
+    char mqtt_client_id[64];
+    char mqtt_keepalive[16];
+    char mqtt_qos[16];
+    char mqtt_base_topic[64];
     char enabled_cap_groups[APP_CONFIG_STR_LEN];
     char llm_visible_cap_groups[APP_CONFIG_STR_LEN];
     char enabled_lua_modules[APP_CONFIG_STR_LEN];

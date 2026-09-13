@@ -171,6 +171,15 @@ menu "App Claw Config"
                 Enable the web search capability and keep app_claw's direct dependency
                 on cap_web_search.
 
+        config APP_CLAW_CAP_MQTT
+            bool "Enable MQTT capability"
+            default y
+            help
+                Enable the MQTT capability (mqtt_publish/mqtt_status/mqtt_subscribe)
+                and keep app_claw's direct dependency on cap_mqtt and mqtt_manager.
+                The MQTT transport only connects at runtime when mqtt_enabled is set
+                and a broker is configured.
+
         config APP_CLAW_CAP_ROUTER_MGR
             bool "Enable router manager capability"
             select APP_CLAW_CAP_EVENT_ROUTER
