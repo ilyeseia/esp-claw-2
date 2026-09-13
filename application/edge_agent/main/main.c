@@ -271,9 +271,9 @@ static esp_err_t init_timezone(const char *timezone)
     return ESP_OK;
 
 tz_default:
-    assert(setenv("TZ", "CST-8", 1) == 0);
+    assert(setenv("TZ", "CET-1", 1) == 0);
     tzset();
-    ESP_LOGI(TAG, "Timezone set to default: CST-8");
+    ESP_LOGI(TAG, "Timezone set to default: CET-1");
     return ret;
 }
 

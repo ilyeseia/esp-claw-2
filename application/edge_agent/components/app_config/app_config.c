@@ -70,7 +70,7 @@ typedef struct {
 #define APP_DEFAULT_ENABLED_CAP_GROUPS       ""
 #define APP_DEFAULT_LLM_VISIBLE_CAP_GROUPS   ""
 #define APP_DEFAULT_ENABLED_LUA_MODULES      ""
-#define APP_DEFAULT_TIME_TIMEZONE            "CST-8"
+#define APP_DEFAULT_TIME_TIMEZONE            "CET-1"
 
 static const app_config_field_t s_fields[] = {
     APP_CONFIG_FIELD(wifi_ssid, "wifi_ssid", APP_WIFI_SSID),
