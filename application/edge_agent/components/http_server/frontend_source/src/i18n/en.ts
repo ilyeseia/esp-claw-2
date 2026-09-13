@@ -20,6 +20,7 @@ export const en = {
   navLlm: 'LLM',
   navIm: 'IM',
   navWebReq: 'Network & Search Config',
+  navMqtt: 'MQTT',
   navMemory: 'Memory',
   navCapabilities: 'Capabilities',
   navLuaModules: 'Lua Modules',
@@ -188,6 +189,26 @@ export const en = {
   webreqHttpAllowlistPlaceholder: 'api.example.com,*.example.org,203.0.113.10',
   webreqHttpAllowlistNote:
     'Use comma-separated domains/IPs. Wildcard * is supported, and a standalone * allows all domains/IPs.',
+
+  sectionMqttBroker: 'MQTT Broker',
+  sectionMqttOptions: 'MQTT Options',
+  mqttEnabled: 'Enable MQTT',
+  mqttEnabledHint: 'Connect to the broker at startup once Wi-Fi is up.',
+  mqttBroker: 'Broker host or IP',
+  mqttBrokerPlaceholder: 'broker.example.com',
+  mqttPort: 'Port',
+  mqttTls: 'Use TLS',
+  mqttTlsHint: 'Verify the broker with the built-in certificate bundle (port usually 8883).',
+  mqttUsername: 'Username',
+  mqttPassword: 'Password',
+  mqttClientId: 'Client ID',
+  mqttClientIdHint: 'Leave empty to derive a stable id from the device MAC.',
+  mqttKeepalive: 'Keep-alive (seconds)',
+  mqttQos: 'Default QoS',
+  mqttBaseTopic: 'Base topic',
+  mqttBaseTopicHint: 'Topics use {base}/{device_id}/... (status, command, response, telemetry).',
+  mqttNote:
+    'Only publish plain-HTTP/untrusted brokers over a trusted network. Passwords are stored on the device and never shown in agent output.',
 
   sectionCapabilities: 'Capability Groups',
   capabilitiesDescription:

@@ -781,6 +781,10 @@ esp_err_t app_claw_start(const app_claw_config_t *config)
     ESP_RETURN_ON_ERROR(claw_event_router_register_outbound_binding("web", "local_send_message"),
                         TAG, "Failed to bind Web / local IM outbound");
 #endif
+#if CONFIG_APP_CLAW_CAP_MQTT && CONFIG_APP_CLAW_CAP_EVENT_ROUTER
+    ESP_RETURN_ON_ERROR(claw_event_router_register_outbound_binding("mqtt", "mqtt_send_message"),
+                        TAG, "Failed to bind MQTT outbound");
+#endif
 
 #if CONFIG_APP_CLAW_CAP_CORE
     app_claw_fill_core_config(config, max_tool_iterations, &core_config);
