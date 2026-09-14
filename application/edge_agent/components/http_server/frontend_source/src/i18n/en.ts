@@ -21,6 +21,7 @@ export const en = {
   navIm: 'IM',
   navWebReq: 'Network & Search Config',
   navMqtt: 'MQTT',
+  navVpn: 'VPN',
   navMemory: 'Memory',
   navCapabilities: 'Capabilities',
   navLuaModules: 'Lua Modules',
@@ -214,6 +215,19 @@ export const en = {
   mqttBaseTopicHint: 'Topics use {base}/{device_id}/... (status, command, response, telemetry).',
   mqttNote:
     'Only publish plain-HTTP/untrusted brokers over a trusted network. Passwords are stored on the device and never shown in agent output.',
+
+  sectionVpnGateway: 'Tailscale Gateway',
+  vpnEnabled: 'Enable VPN gateway integration',
+  vpnEnabledHint: 'Tailscale runs on a LAN subnet-router, not on the device. This only tracks the gateway and probes reachability.',
+  vpnGateway: 'Gateway host or IP',
+  vpnGatewayHint: 'The Tailscale subnet-router on your LAN (informational).',
+  vpnGatewayPlaceholder: '192.168.1.10',
+  vpnTestHost: 'Tailnet test host',
+  vpnTestHostHint: 'A host on your tailnet that vpn_status probes (DNS + TCP).',
+  vpnTestHostPlaceholder: 'searxng.tailXXXX.ts.net',
+  vpnTestPort: 'Test port',
+  vpnNote:
+    'The device stays a normal LAN client; a Tailscale subnet-router bridges it to your tailnet. Use vpn_status to confirm the route is up.',
 
   sectionCapabilities: 'Capability Groups',
   capabilitiesDescription:

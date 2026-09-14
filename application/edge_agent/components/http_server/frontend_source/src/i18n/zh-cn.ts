@@ -23,6 +23,7 @@ export const zhCn: Dict = {
   navIm: 'IM 设置',
   navWebReq: '网络和搜索设置',
   navMqtt: 'MQTT',
+  navVpn: 'VPN',
   navMemory: '记忆管理',
   navCapabilities: 'Capabilities 管理',
   navLuaModules: 'Lua 模块管理',
@@ -207,6 +208,18 @@ export const zhCn: Dict = {
   mqttBaseTopic: '基础主题',
   mqttBaseTopicHint: '主题格式为 {base}/{device_id}/...（status、command、response、telemetry）。',
   mqttNote: '仅在可信网络中连接明文/不可信服务器。密码保存在设备上，且不会出现在智能体输出中。',
+
+  sectionVpnGateway: 'Tailscale 网关',
+  vpnEnabled: '启用 VPN 网关集成',
+  vpnEnabledHint: 'Tailscale 运行在局域网的子网路由器上，而非设备本身。此处仅记录网关并探测可达性。',
+  vpnGateway: '网关主机或 IP',
+  vpnGatewayHint: '局域网中的 Tailscale 子网路由器（仅供参考）。',
+  vpnGatewayPlaceholder: '192.168.1.10',
+  vpnTestHost: 'Tailnet 测试主机',
+  vpnTestHostHint: 'vpn_status 将探测的 tailnet 主机（DNS + TCP）。',
+  vpnTestHostPlaceholder: 'searxng.tailXXXX.ts.net',
+  vpnTestPort: '测试端口',
+  vpnNote: '设备仍是普通的局域网客户端；由 Tailscale 子网路由器桥接到 tailnet。使用 vpn_status 确认路由是否可用。',
 
   sectionCapabilities: 'Capability Group',
   capabilitiesDescription:

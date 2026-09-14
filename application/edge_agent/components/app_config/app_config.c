@@ -69,6 +69,10 @@ typedef struct {
 #define APP_DEFAULT_MQTT_KEEPALIVE           "60"
 #define APP_DEFAULT_MQTT_QOS                 "0"
 #define APP_DEFAULT_MQTT_BASE_TOPIC          "espclaw"
+#define APP_DEFAULT_VPN_ENABLED              "false"
+#define APP_DEFAULT_VPN_GATEWAY              ""
+#define APP_DEFAULT_VPN_TEST_HOST            ""
+#define APP_DEFAULT_VPN_TEST_PORT            "80"
 #define APP_DEFAULT_ENABLED_CAP_GROUPS       ""
 #define APP_DEFAULT_LLM_VISIBLE_CAP_GROUPS   ""
 #define APP_DEFAULT_ENABLED_LUA_MODULES      ""
@@ -117,6 +121,10 @@ static const app_config_field_t s_fields[] = {
     APP_CONFIG_FIELD(mqtt_keepalive, "mqtt_keepalive", APP_DEFAULT_MQTT_KEEPALIVE),
     APP_CONFIG_FIELD(mqtt_qos, "mqtt_qos", APP_DEFAULT_MQTT_QOS),
     APP_CONFIG_FIELD(mqtt_base_topic, "mqtt_base_top", APP_DEFAULT_MQTT_BASE_TOPIC),
+    APP_CONFIG_FIELD(vpn_enabled, "vpn_en", APP_DEFAULT_VPN_ENABLED),
+    APP_CONFIG_FIELD(vpn_gateway, "vpn_gw", APP_DEFAULT_VPN_GATEWAY),
+    APP_CONFIG_FIELD(vpn_test_host, "vpn_host", APP_DEFAULT_VPN_TEST_HOST),
+    APP_CONFIG_FIELD(vpn_test_port, "vpn_port", APP_DEFAULT_VPN_TEST_PORT),
     APP_CONFIG_FIELD(enabled_cap_groups, "en_cap_groups", APP_DEFAULT_ENABLED_CAP_GROUPS),
     APP_CONFIG_FIELD(llm_visible_cap_groups, "vis_cap_groups", APP_DEFAULT_LLM_VISIBLE_CAP_GROUPS),
     APP_CONFIG_FIELD(enabled_lua_modules, "en_lua_mods", APP_DEFAULT_ENABLED_LUA_MODULES),
@@ -620,6 +628,10 @@ void app_config_to_claw(const app_config_t *config, app_claw_config_t *out)
     strlcpy(out->mqtt_keepalive, config->mqtt_keepalive, sizeof(out->mqtt_keepalive));
     strlcpy(out->mqtt_qos, config->mqtt_qos, sizeof(out->mqtt_qos));
     strlcpy(out->mqtt_base_topic, config->mqtt_base_topic, sizeof(out->mqtt_base_topic));
+    strlcpy(out->vpn_enabled, config->vpn_enabled, sizeof(out->vpn_enabled));
+    strlcpy(out->vpn_gateway, config->vpn_gateway, sizeof(out->vpn_gateway));
+    strlcpy(out->vpn_test_host, config->vpn_test_host, sizeof(out->vpn_test_host));
+    strlcpy(out->vpn_test_port, config->vpn_test_port, sizeof(out->vpn_test_port));
     strlcpy(out->enabled_cap_groups, config->enabled_cap_groups, sizeof(out->enabled_cap_groups));
     strlcpy(out->llm_visible_cap_groups, config->llm_visible_cap_groups, sizeof(out->llm_visible_cap_groups));
     strlcpy(out->enabled_lua_modules, config->enabled_lua_modules, sizeof(out->enabled_lua_modules));

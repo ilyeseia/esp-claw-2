@@ -62,6 +62,12 @@ typedef struct {
     char mqtt_keepalive[16];
     char mqtt_qos[16];
     char mqtt_base_topic[64];
+    /* Tailscale gateway (Option C) VPN integration. No WireGuard runs on the
+     * device; these describe the LAN gateway and a tailnet host to probe. */
+    char vpn_enabled[8];                    /* "true" / "false" */
+    char vpn_gateway[APP_CONFIG_STR_LEN];   /* subnet-router host/IP on the LAN (informational) */
+    char vpn_test_host[APP_CONFIG_STR_LEN]; /* tailnet host to probe, e.g. "*.ts.net" */
+    char vpn_test_port[16];                 /* TCP port to probe, default 80 */
     char enabled_cap_groups[APP_CONFIG_STR_LEN];
     char llm_visible_cap_groups[APP_CONFIG_STR_LEN];
     char enabled_lua_modules[APP_CONFIG_STR_LEN];

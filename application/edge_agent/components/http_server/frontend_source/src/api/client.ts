@@ -47,6 +47,10 @@ export type AppConfig = {
   mqtt_keepalive: string;
   mqtt_qos: string;
   mqtt_base_topic: string;
+  vpn_enabled: string;
+  vpn_gateway: string;
+  vpn_test_host: string;
+  vpn_test_port: string;
   enabled_cap_groups: string;
   llm_visible_cap_groups: string;
   enabled_lua_modules: string;
@@ -61,6 +65,7 @@ export type ConfigGroup =
   | 'im'
   | 'search'
   | 'mqtt'
+  | 'vpn'
   | 'capabilities'
   | 'skills'
   | 'time';
@@ -112,6 +117,7 @@ export const GROUP_FIELDS: Record<ConfigGroup, (keyof AppConfig)[]> = {
     'mqtt_qos',
     'mqtt_base_topic',
   ],
+  vpn: ['vpn_enabled', 'vpn_gateway', 'vpn_test_host', 'vpn_test_port'],
   capabilities: ['enabled_cap_groups', 'llm_visible_cap_groups'],
   skills: ['enabled_lua_modules'],
   time: ['time_timezone'],

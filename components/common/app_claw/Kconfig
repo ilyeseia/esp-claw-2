@@ -180,6 +180,14 @@ menu "App Claw Config"
                 The MQTT transport only connects at runtime when mqtt_enabled is set
                 and a broker is configured.
 
+        config APP_CLAW_CAP_VPN
+            bool "Enable VPN (Tailscale gateway) capability"
+            default y
+            help
+                Enable the cap_vpn capability (vpn_status). Tailscale runs on a
+                LAN subnet-router gateway, not on the device; this only holds the
+                gateway/tailnet settings and probes reachability of a tailnet host.
+
         config APP_CLAW_CAP_ROUTER_MGR
             bool "Enable router manager capability"
             select APP_CLAW_CAP_EVENT_ROUTER

@@ -1,0 +1,11 @@
+idf_component_register(
+    SRCS
+        "src/cap_vpn.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        claw_cap
+        json
+        esp_timer
+        lwip
+)

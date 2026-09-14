@@ -67,6 +67,9 @@
 #if CONFIG_APP_CLAW_CAP_MQTT
 #include "cap_mqtt.h"
 #endif
+#if CONFIG_APP_CLAW_CAP_VPN
+#include "cap_vpn.h"
+#endif
 #include "claw_cap.h"
 #if CONFIG_APP_CLAW_CAP_MEMORY
 #include "claw_memory.h"
@@ -764,6 +767,32 @@ static esp_err_t app_cap_register_mqtt(const app_claw_config_t *config,
 }
 #endif
 
+#if CONFIG_APP_CLAW_CAP_VPN
+static esp_err_t app_cap_prepare_vpn(const app_claw_config_t *config,
+                                     const app_claw_storage_paths_t *paths)
+{
+    (void)paths;
+
+    bool enabled = config->vpn_enabled[0] &&
+                   (strcmp(config->vpn_enabled, "true") == 0 || strcmp(config->vpn_enabled, "1") == 0);
+    cap_vpn_config_t vpn_cfg = {
+        .enabled = enabled,
+        .gateway = config->vpn_gateway,
+        .test_host = config->vpn_test_host,
+        .test_port = (uint16_t)atoi(config->vpn_test_port),
+    };
+    return cap_vpn_set_config(&vpn_cfg);
+}
+
+static esp_err_t app_cap_register_vpn(const app_claw_config_t *config,
+                                      const app_claw_storage_paths_t *paths)
+{
+    (void)config;
+    (void)paths;
+    return cap_vpn_register_group();
+}
+#endif
+
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
 static esp_err_t app_cap_register_router_mgr(const app_claw_config_t *config,
                                              const app_claw_storage_paths_t *paths)
@@ -846,6 +875,9 @@ static const app_capability_group_entry_t s_capability_group_entries[] = {
 #if CONFIG_APP_CLAW_CAP_MQTT
     { "cap_mqtt", "MQTT", "Register MQTT cap", false, app_cap_prepare_mqtt, app_cap_register_mqtt },
 #endif
+#if CONFIG_APP_CLAW_CAP_VPN
+    { "cap_vpn", "VPN", "Register VPN cap", true, app_cap_prepare_vpn, app_cap_register_vpn },
+#endif
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
     { "cap_router_mgr", "Router Manager", "Register router manager cap", true, NULL, app_cap_register_router_mgr },
 #endif
@@ -905,6 +937,9 @@ static const app_capability_group_info_t s_capability_group_infos[] = {
 #endif
 #if CONFIG_APP_CLAW_CAP_MQTT
     { "cap_mqtt", "MQTT", false },
+#endif
+#if CONFIG_APP_CLAW_CAP_VPN
+    { "cap_vpn", "VPN", true },
 #endif
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
     { "cap_router_mgr", "Router Manager", false },

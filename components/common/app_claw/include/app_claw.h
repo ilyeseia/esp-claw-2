@@ -61,6 +61,10 @@ typedef struct {
     char mqtt_keepalive[16];
     char mqtt_qos[16];
     char mqtt_base_topic[APP_CLAW_MODEL_LEN];
+    char vpn_enabled[8];
+    char vpn_gateway[APP_CLAW_STR_LEN];
+    char vpn_test_host[APP_CLAW_STR_LEN];
+    char vpn_test_port[16];
     char asr_provider[APP_CLAW_SHORT_STR_LEN];
     char asr_api_key[APP_CLAW_STR_LEN];
     char asr_workspace_id[APP_CLAW_STR_LEN];

@@ -9,6 +9,7 @@ import {
   Radio,
   Search,
   Settings,
+  ShieldCheck,
   SquareFunction,
   WifiPen,
 } from 'lucide-solid';
@@ -26,6 +27,7 @@ const IconLlm: Component = () => <Bot class={iconClass} />;
 const IconIm: Component = () => <MessageSquareCode class={iconClass} />;
 const IconSearch: Component = () => <Search class={iconClass} />;
 const IconMqtt: Component = () => <Radio class={iconClass} />;
+const IconVpn: Component = () => <ShieldCheck class={iconClass} />;
 const IconMemory: Component = () => <DatabaseZap class={iconClass} />;
 const IconCaps: Component = () => <Blocks class={iconClass} />;
 const IconSkills: Component = () => <SquareFunction class={iconClass} />;
@@ -42,6 +44,7 @@ export type LeafNode = {
     | 'navIm'
     | 'navWebReq'
     | 'navMqtt'
+    | 'navVpn'
     | 'navMemory'
     | 'navCapabilities'
     | 'navLuaModules'
@@ -71,6 +74,7 @@ export const NAV_TREE: NavNode[] = [
       { kind: 'leaf', id: 'im', labelKey: 'navIm', icon: IconIm },
       { kind: 'leaf', id: 'webreq', labelKey: 'navWebReq', icon: IconSearch },
       { kind: 'leaf', id: 'mqtt', labelKey: 'navMqtt', icon: IconMqtt },
+      { kind: 'leaf', id: 'vpn', labelKey: 'navVpn', icon: IconVpn },
     ],
   },
   { kind: 'leaf', id: 'memory', labelKey: 'navMemory', icon: IconMemory },

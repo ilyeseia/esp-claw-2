@@ -83,6 +83,11 @@ static const config_field_def_t CONFIG_FIELDS[] = {
     CONFIG_FIELD("mqtt",         mqtt_qos),
     CONFIG_FIELD("mqtt",         mqtt_base_topic),
 
+    CONFIG_FIELD("vpn",          vpn_enabled),
+    CONFIG_FIELD("vpn",          vpn_gateway),
+    CONFIG_FIELD("vpn",          vpn_test_host),
+    CONFIG_FIELD("vpn",          vpn_test_port),
+
     CONFIG_FIELD("capabilities", enabled_cap_groups),
     CONFIG_FIELD("capabilities", llm_visible_cap_groups),
 
