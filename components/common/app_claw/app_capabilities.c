@@ -810,6 +810,36 @@ static esp_err_t app_cap_register_mqtt(const app_claw_config_t *config,
 #endif
 
 #if CONFIG_APP_CLAW_CAP_VPN
+/* Persist hook for the vpn_configure tool: fold the applied VPN settings back
+ * into the full app config and save them so they survive a reboot. */
+static esp_err_t app_cap_vpn_persist(const cap_vpn_config_t *config, void *user_ctx)
+{
+    (void)user_ctx;
+    if (!config) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    app_claw_config_t *app = calloc(1, sizeof(*app));
+    if (!app) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    esp_err_t err = app_claw_get_config(app);
+    if (err != ESP_OK) {
+        free(app);
+        return err;
+    }
+
+    strlcpy(app->vpn_enabled, config->enabled ? "true" : "false", sizeof(app->vpn_enabled));
+    strlcpy(app->vpn_gateway, config->gateway ? config->gateway : "", sizeof(app->vpn_gateway));
+    strlcpy(app->vpn_test_host, config->test_host ? config->test_host : "", sizeof(app->vpn_test_host));
+    snprintf(app->vpn_test_port, sizeof(app->vpn_test_port), "%u", (unsigned)config->test_port);
+
+    err = app_claw_apply_config(app);
+    free(app);
+    return err;
+}
+
 static esp_err_t app_cap_prepare_vpn(const app_claw_config_t *config,
                                      const app_claw_storage_paths_t *paths)
 {
@@ -823,7 +853,12 @@ static esp_err_t app_cap_prepare_vpn(const app_claw_config_t *config,
         .test_host = config->vpn_test_host,
         .test_port = (uint16_t)atoi(config->vpn_test_port),
     };
-    return cap_vpn_set_config(&vpn_cfg);
+
+    esp_err_t err = cap_vpn_set_config(&vpn_cfg);
+    if (err != ESP_OK) {
+        return err;
+    }
+    return cap_vpn_set_persist_provider(app_cap_vpn_persist, NULL);
 }
 
 static esp_err_t app_cap_register_vpn(const app_claw_config_t *config,

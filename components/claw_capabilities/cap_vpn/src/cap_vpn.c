@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <arpa/inet.h>
@@ -35,6 +36,16 @@ typedef struct {
 } cap_vpn_state_t;
 
 static cap_vpn_state_t s_vpn;
+
+static cap_vpn_persist_fn s_persist;
+static void *s_persist_ctx;
+
+esp_err_t cap_vpn_set_persist_provider(cap_vpn_persist_fn persist, void *user_ctx)
+{
+    s_persist = persist;
+    s_persist_ctx = user_ctx;
+    return ESP_OK;
+}
 
 /* Emit a cJSON object into the caller-provided output buffer, then free it. */
 static esp_err_t cap_vpn_emit(cJSON *root, char *output, size_t output_size)
@@ -179,6 +190,110 @@ static esp_err_t cap_vpn_status_execute(const char *input_json,
     return cap_vpn_emit(root, output, output_size);
 }
 
+static const char *cap_vpn_json_str(cJSON *root, const char *key)
+{
+    cJSON *item = cJSON_GetObjectItem(root, key);
+    return (cJSON_IsString(item) && item->valuestring) ? item->valuestring : NULL;
+}
+
+static bool cap_vpn_json_bool(cJSON *root, const char *key, bool fallback)
+{
+    cJSON *item = cJSON_GetObjectItem(root, key);
+    if (cJSON_IsBool(item)) {
+        return cJSON_IsTrue(item);
+    }
+    if (cJSON_IsString(item) && item->valuestring) {
+        return strcmp(item->valuestring, "true") == 0 || strcmp(item->valuestring, "1") == 0;
+    }
+    return fallback;
+}
+
+static int cap_vpn_json_int(cJSON *root, const char *key, int fallback)
+{
+    cJSON *item = cJSON_GetObjectItem(root, key);
+    if (cJSON_IsNumber(item)) {
+        return item->valueint;
+    }
+    if (cJSON_IsString(item) && item->valuestring && item->valuestring[0]) {
+        return atoi(item->valuestring);
+    }
+    return fallback;
+}
+
+/*
+ * vpn_configure: set the Tailscale gateway settings from a chat/tool call, apply
+ * live and (if a persist provider is wired) save to NVS. Root-agent only +
+ * restricted. Omitted fields keep their current value. No secrets are involved.
+ */
+static esp_err_t cap_vpn_configure_execute(const char *input_json,
+                                           const claw_cap_call_context_t *ctx,
+                                           char *output,
+                                           size_t output_size)
+{
+    (void)ctx;
+
+    cJSON *input = cJSON_Parse(input_json);
+    if (!input) {
+        snprintf(output, output_size, "Error: invalid input JSON");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    bool enabled = cap_vpn_json_bool(input, "enabled", true);
+    int port = cap_vpn_json_int(input, "test_port", s_vpn.test_port ? s_vpn.test_port : 80);
+    const char *gateway = cap_vpn_json_str(input, "gateway");
+    const char *test_host = cap_vpn_json_str(input, "test_host");
+
+    /* Preserve existing values when a field is omitted. */
+    char gw_buf[CAP_VPN_HOST_MAX];
+    char host_buf[CAP_VPN_HOST_MAX];
+    strlcpy(gw_buf, gateway ? gateway : s_vpn.gateway, sizeof(gw_buf));
+    strlcpy(host_buf, test_host ? test_host : s_vpn.test_host, sizeof(host_buf));
+    cJSON_Delete(input);
+
+    if (port < 1 || port > 65535) {
+        snprintf(output, output_size, "Error: test_port must be between 1 and 65535");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    cap_vpn_config_t cfg = {
+        .enabled = enabled,
+        .gateway = gw_buf,
+        .test_host = host_buf,
+        .test_port = (uint16_t)port,
+    };
+
+    esp_err_t err = cap_vpn_set_config(&cfg);
+    if (err != ESP_OK) {
+        snprintf(output, output_size, "Error: failed to apply VPN config (%s)", esp_err_to_name(err));
+        return err;
+    }
+
+    bool persisted = false;
+    if (s_persist) {
+        esp_err_t perr = s_persist(&cfg, s_persist_ctx);
+        persisted = (perr == ESP_OK);
+        if (!persisted) {
+            ESP_LOGW(TAG, "VPN config applied live but persist failed: %s", esp_err_to_name(perr));
+        }
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        snprintf(output, output_size, "Error: out of memory");
+        return ESP_ERR_NO_MEM;
+    }
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON_AddBoolToObject(root, "enabled", enabled);
+    cJSON_AddStringToObject(root, "gateway", gw_buf);
+    cJSON_AddStringToObject(root, "test_host", host_buf);
+    cJSON_AddNumberToObject(root, "test_port", port);
+    cJSON_AddBoolToObject(root, "persisted", persisted);
+    cJSON_AddStringToObject(root, "note",
+                            "Saved. Run vpn_status to probe the route. Reachability depends on the "
+                            "Tailscale subnet-router gateway on your LAN, not on the device itself.");
+    return cap_vpn_emit(root, output, output_size);
+}
+
 static const claw_cap_descriptor_t s_vpn_descriptors[] = {
     {
         .id = "vpn_status",
@@ -190,6 +305,24 @@ static const claw_cap_descriptor_t s_vpn_descriptors[] = {
         .cap_flags = CLAW_CAP_FLAG_CALLABLE_BY_LLM,
         .input_schema_json = "{\"type\":\"object\",\"properties\":{}}",
         .execute = cap_vpn_status_execute,
+    },
+    {
+        .id = "vpn_configure",
+        .name = "vpn_configure",
+        .family = "network",
+        .description = "Configure the Tailscale gateway VPN settings (enabled/gateway/test_host/test_port), "
+                       "apply live and persist across reboots. Restricted, root-agent only. The device does "
+                       "not itself join the tailnet — a LAN subnet-router gateway bridges it.",
+        .kind = CLAW_CAP_KIND_CALLABLE,
+        .cap_flags = CLAW_CAP_FLAG_CALLABLE_BY_LLM | CLAW_CAP_FLAG_RESTRICTED |
+                     CLAW_CAP_FLAG_ROOT_AGENT_ONLY,
+        .input_schema_json =
+        "{\"type\":\"object\",\"properties\":{"
+        "\"enabled\":{\"type\":\"boolean\"},"
+        "\"gateway\":{\"type\":\"string\",\"description\":\"subnet-router LAN host/IP\"},"
+        "\"test_host\":{\"type\":\"string\",\"description\":\"tailnet host to probe\"},"
+        "\"test_port\":{\"type\":\"integer\"}}}",
+        .execute = cap_vpn_configure_execute,
     },
 };
 

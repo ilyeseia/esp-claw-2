@@ -33,7 +33,15 @@ typedef struct {
 /* Apply configuration. Safe to call again to update settings. */
 esp_err_t cap_vpn_set_config(const cap_vpn_config_t *config);
 
-/* Register the cap_vpn group (vpn_status). */
+/*
+ * Optional persistence hook. When set, the (root-agent-only) vpn_configure tool
+ * writes the applied settings through this callback so they survive a reboot.
+ * The app wires this to its NVS-backed config store.
+ */
+typedef esp_err_t (*cap_vpn_persist_fn)(const cap_vpn_config_t *config, void *user_ctx);
+esp_err_t cap_vpn_set_persist_provider(cap_vpn_persist_fn persist, void *user_ctx);
+
+/* Register the cap_vpn group (vpn_status, vpn_configure). */
 esp_err_t cap_vpn_register_group(void);
 
 #ifdef __cplusplus
