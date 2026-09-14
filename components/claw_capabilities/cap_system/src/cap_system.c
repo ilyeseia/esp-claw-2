@@ -61,6 +61,16 @@ static struct {
     bool running;
 } s_time_service = {0};
 
+static cap_system_timezone_persist_fn s_tz_persist = NULL;
+static void *s_tz_persist_ctx = NULL;
+
+esp_err_t cap_system_set_timezone_persist_provider(cap_system_timezone_persist_fn fn, void *ctx)
+{
+    s_tz_persist = fn;
+    s_tz_persist_ctx = ctx;
+    return ESP_OK;
+}
+
 static esp_err_t cap_system_get_current_time(char *output, size_t output_size);
 static esp_err_t cap_system_sync_time_now(char *output, size_t output_size);
 static bool cap_system_is_time_valid(void);
@@ -913,6 +923,94 @@ static esp_err_t cap_system_execute_restart(const char *input_json,
     return ESP_OK;
 }
 
+/*
+ * set_timezone: set the device timezone from a chat/tool call. The value is a
+ * POSIX TZ string (e.g. "CET-1" for Algeria/UTC+1). It is applied immediately
+ * (setenv+tzset) and, when a persist provider is wired, saved to NVS so it
+ * survives a reboot. Reachable from any chat surface (e.g. Telegram) as well as
+ * the Web UI timezone field.
+ */
+static esp_err_t cap_system_execute_set_timezone(const char *input_json,
+                                                 const claw_cap_call_context_t *ctx,
+                                                 char *output,
+                                                 size_t output_size)
+{
+    cJSON *input = NULL;
+    cJSON *tz_item = NULL;
+    char tz[48];
+    char timebuf[64] = "";
+    bool persisted = false;
+
+    (void)ctx;
+    if (!output || output_size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    input = (input_json && input_json[0]) ? cJSON_Parse(input_json) : NULL;
+    if (!input || !cJSON_IsObject(input)) {
+        cJSON_Delete(input);
+        snprintf(output, output_size, "{\"ok\":false,\"error\":\"invalid input json\"}");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    tz_item = cJSON_GetObjectItem(input, "timezone");
+    if (!cJSON_IsString(tz_item) || !tz_item->valuestring || !tz_item->valuestring[0]) {
+        cJSON_Delete(input);
+        snprintf(output, output_size,
+                 "{\"ok\":false,\"error\":\"'timezone' (POSIX TZ, e.g. CET-1) is required\"}");
+        return ESP_ERR_INVALID_ARG;
+    }
+    strlcpy(tz, tz_item->valuestring, sizeof(tz));
+    cJSON_Delete(input);
+
+    /* POSIX TZ is otherwise freeform; just reject control characters. */
+    for (const char *p = tz; *p; p++) {
+        if ((unsigned char)*p < 0x20) {
+            snprintf(output, output_size, "{\"ok\":false,\"error\":\"invalid timezone string\"}");
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    /* Apply live. */
+    setenv("TZ", tz, 1);
+    tzset();
+
+    /* Persist so it survives a reboot. */
+    if (s_tz_persist) {
+        esp_err_t perr = s_tz_persist(tz, s_tz_persist_ctx);
+        persisted = (perr == ESP_OK);
+        if (!persisted) {
+            ESP_LOGW(TAG, "timezone applied live but persist failed: %s", esp_err_to_name(perr));
+        }
+    }
+
+    time_t now = time(NULL);
+    struct tm local_tm;
+    if (localtime_r(&now, &local_tm)) {
+        strftime(timebuf, sizeof(timebuf), "%Y-%m-%d %H:%M:%S %Z", &local_tm);
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        snprintf(output, output_size, "{\"ok\":false,\"error\":\"out of memory\"}");
+        return ESP_ERR_NO_MEM;
+    }
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON_AddStringToObject(root, "timezone", tz);
+    cJSON_AddBoolToObject(root, "persisted", persisted);
+    cJSON_AddStringToObject(root, "local_time", timebuf);
+    char *text = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!text) {
+        snprintf(output, output_size, "{\"ok\":false,\"error\":\"failed to encode result\"}");
+        return ESP_ERR_NO_MEM;
+    }
+    strlcpy(output, text, output_size);
+    cJSON_free(text);
+    ESP_LOGI(TAG, "Timezone set to %s (persisted=%d)", tz, (int)persisted);
+    return ESP_OK;
+}
+
 static const claw_cap_descriptor_t s_system_descriptors[] = {
     {
         .id = "get_system_info",
@@ -937,6 +1035,20 @@ static const claw_cap_descriptor_t s_system_descriptors[] = {
         .cap_flags = CLAW_CAP_FLAG_CALLABLE_BY_LLM,
         .input_schema_json = "{\"type\":\"object\",\"properties\":{}}",
         .execute = cap_system_execute_get_current_time,
+    },
+    {
+        .id = "set_timezone",
+        .name = "set_timezone",
+        .family = "system",
+        .description = "Set the device timezone as a POSIX TZ string (e.g. 'CET-1' for Algeria/UTC+1, "
+                       "'CST-8' for Beijing, 'EST5' for New York, 'UTC0'). Applies immediately and "
+                       "persists across reboots. IANA names like 'Africa/Algiers' are NOT accepted.",
+        .kind = CLAW_CAP_KIND_CALLABLE,
+        .cap_flags = CLAW_CAP_FLAG_CALLABLE_BY_LLM,
+        .input_schema_json = "{\"type\":\"object\",\"properties\":{\"timezone\":{\"type\":\"string\","
+                             "\"description\":\"POSIX TZ string, e.g. CET-1 (Algeria), CST-8 (Beijing), EST5, UTC0\"}},"
+                             "\"required\":[\"timezone\"]}",
+        .execute = cap_system_execute_set_timezone,
     },
     {
         .id = "restart_device",

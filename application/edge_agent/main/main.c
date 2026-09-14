@@ -29,10 +29,15 @@
 #include "cap_im_wechat.h"
 #endif
 #include "app_config.h"
+#if CONFIG_APP_CLAW_CAP_SYSTEM
+#include "cap_system.h"
+#endif
 
 #define APP_ENABLE_MEM_LOG        (0)
 
 static const char *TAG = "app";
+
+static esp_err_t init_timezone(const char *timezone);
 
 static app_config_t *s_config;
 static app_claw_config_t *s_claw_config;
@@ -112,6 +117,9 @@ static esp_err_t main_save_config(const app_config_t *config)
     if (err != ESP_OK) {
         return err;
     }
+
+    /* Timezone changes from the Web UI take effect immediately (no reboot). */
+    init_timezone(config->time_timezone);
 
     claw_config = calloc(1, sizeof(*claw_config));
     if (!claw_config) {
@@ -313,6 +321,28 @@ static void memory_monitor_task(void *arg)
 
 #endif
 
+#if CONFIG_APP_CLAW_CAP_SYSTEM
+/* Persist a timezone chosen via the set_timezone tool (e.g. over Telegram) into
+ * the NVS-backed app config. The tool already applied it live; this makes it
+ * survive a reboot. */
+static esp_err_t main_persist_timezone(const char *timezone, void *ctx)
+{
+    (void)ctx;
+    ESP_RETURN_ON_FALSE(timezone && timezone[0], ESP_ERR_INVALID_ARG, TAG, "empty timezone");
+
+    app_config_t *cfg = calloc(1, sizeof(*cfg));
+    ESP_RETURN_ON_FALSE(cfg, ESP_ERR_NO_MEM, TAG, "alloc config for tz persist");
+
+    esp_err_t err = app_config_load(cfg);
+    if (err == ESP_OK) {
+        strlcpy(cfg->time_timezone, timezone, sizeof(cfg->time_timezone));
+        err = app_config_save(cfg);
+    }
+    free(cfg);
+    return err;
+}
+#endif
+
 void app_main(void)
 {
     esp_log_level_set("esp-x509-crt-bundle", ESP_LOG_WARN);
@@ -418,6 +448,10 @@ void app_main(void)
 
     ESP_ERROR_CHECK(app_claw_set_save_config_callback(main_save_claw_config, NULL));
     ESP_ERROR_CHECK(app_claw_start(s_claw_config));
+#if CONFIG_APP_CLAW_CAP_SYSTEM
+    /* Let the set_timezone agent tool (e.g. via Telegram) persist to NVS. */
+    ESP_ERROR_CHECK(cap_system_set_timezone_persist_provider(main_persist_timezone, NULL));
+#endif
 #if CONFIG_APP_CLAW_CAP_IM_LOCAL
     ESP_ERROR_CHECK(http_server_webim_bind_im());
 #endif

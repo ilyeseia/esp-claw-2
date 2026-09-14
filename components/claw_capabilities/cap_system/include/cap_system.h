@@ -27,8 +27,14 @@ typedef struct {
     uint32_t sync_retry_ms;
 } cap_system_time_sync_service_config_t;
 
+/* Persists a POSIX TZ string so it survives a reboot. Wired by the application
+ * to its NVS-backed config store; the set_timezone tool applies the value live
+ * and then calls this to save it. */
+typedef esp_err_t (*cap_system_timezone_persist_fn)(const char *timezone, void *ctx);
+
 esp_err_t cap_system_register_group(void);
 esp_err_t cap_system_time_sync_service_start(const cap_system_time_sync_service_config_t *config);
+esp_err_t cap_system_set_timezone_persist_provider(cap_system_timezone_persist_fn fn, void *ctx);
 
 #ifdef __cplusplus
 }
