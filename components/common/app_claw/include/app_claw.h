@@ -65,6 +65,12 @@ typedef struct {
     char vpn_gateway[APP_CLAW_STR_LEN];
     char vpn_test_host[APP_CLAW_STR_LEN];
     char vpn_test_port[16];
+    char net_use_static[8];
+    char net_ip[20];
+    char net_gateway[20];
+    char net_netmask[20];
+    char net_dns[20];
+    char net_dns2[20];
     char asr_provider[APP_CLAW_SHORT_STR_LEN];
     char asr_api_key[APP_CLAW_STR_LEN];
     char asr_workspace_id[APP_CLAW_STR_LEN];

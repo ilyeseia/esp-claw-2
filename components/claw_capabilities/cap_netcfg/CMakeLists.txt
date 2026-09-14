@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS
+        "src/cap_netcfg.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        claw_cap
+        json
+        esp_netif
+)

@@ -71,6 +71,9 @@
 #if CONFIG_APP_CLAW_CAP_VPN
 #include "cap_vpn.h"
 #endif
+#if CONFIG_APP_CLAW_CAP_NETCFG
+#include "cap_netcfg.h"
+#endif
 #include "claw_cap.h"
 #if CONFIG_APP_CLAW_CAP_MEMORY
 #include "claw_memory.h"
@@ -870,6 +873,56 @@ static esp_err_t app_cap_register_vpn(const app_claw_config_t *config,
 }
 #endif
 
+#if CONFIG_APP_CLAW_CAP_NETCFG
+/* Persist hook for network_configure: fold the static-IP settings back into the
+ * full app config and save them so they take effect on the next reboot. */
+static esp_err_t app_cap_netcfg_persist(const cap_netcfg_config_t *config, void *user_ctx)
+{
+    (void)user_ctx;
+    if (!config) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    app_claw_config_t *app = calloc(1, sizeof(*app));
+    if (!app) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    esp_err_t err = app_claw_get_config(app);
+    if (err != ESP_OK) {
+        free(app);
+        return err;
+    }
+
+    strlcpy(app->net_use_static, config->use_static ? "true" : "false", sizeof(app->net_use_static));
+    strlcpy(app->net_ip, config->ip ? config->ip : "", sizeof(app->net_ip));
+    strlcpy(app->net_gateway, config->gateway ? config->gateway : "", sizeof(app->net_gateway));
+    strlcpy(app->net_netmask, config->netmask ? config->netmask : "", sizeof(app->net_netmask));
+    strlcpy(app->net_dns, config->dns ? config->dns : "", sizeof(app->net_dns));
+    strlcpy(app->net_dns2, config->dns2 ? config->dns2 : "", sizeof(app->net_dns2));
+
+    err = app_claw_apply_config(app);
+    free(app);
+    return err;
+}
+
+static esp_err_t app_cap_prepare_netcfg(const app_claw_config_t *config,
+                                        const app_claw_storage_paths_t *paths)
+{
+    (void)config;
+    (void)paths;
+    return cap_netcfg_set_persist_provider(app_cap_netcfg_persist, NULL);
+}
+
+static esp_err_t app_cap_register_netcfg(const app_claw_config_t *config,
+                                         const app_claw_storage_paths_t *paths)
+{
+    (void)config;
+    (void)paths;
+    return cap_netcfg_register_group();
+}
+#endif
+
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
 static esp_err_t app_cap_register_router_mgr(const app_claw_config_t *config,
                                              const app_claw_storage_paths_t *paths)
@@ -955,6 +1008,9 @@ static const app_capability_group_entry_t s_capability_group_entries[] = {
 #if CONFIG_APP_CLAW_CAP_VPN
     { "cap_vpn", "VPN", "Register VPN cap", true, app_cap_prepare_vpn, app_cap_register_vpn },
 #endif
+#if CONFIG_APP_CLAW_CAP_NETCFG
+    { "cap_netcfg", "Network", "Register network config cap", true, app_cap_prepare_netcfg, app_cap_register_netcfg },
+#endif
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
     { "cap_router_mgr", "Router Manager", "Register router manager cap", true, NULL, app_cap_register_router_mgr },
 #endif
@@ -1017,6 +1073,9 @@ static const app_capability_group_info_t s_capability_group_infos[] = {
 #endif
 #if CONFIG_APP_CLAW_CAP_VPN
     { "cap_vpn", "VPN", true },
+#endif
+#if CONFIG_APP_CLAW_CAP_NETCFG
+    { "cap_netcfg", "Network", true },
 #endif
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
     { "cap_router_mgr", "Router Manager", false },

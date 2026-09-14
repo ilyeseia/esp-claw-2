@@ -24,6 +24,7 @@ export const zhCn: Dict = {
   navWebReq: '网络和搜索设置',
   navMqtt: 'MQTT',
   navVpn: 'VPN',
+  navNetwork: '网络',
   navMemory: '记忆管理',
   navCapabilities: 'Capabilities 管理',
   navLuaModules: 'Lua 模块管理',
@@ -220,6 +221,16 @@ export const zhCn: Dict = {
   vpnTestHostPlaceholder: 'searxng.tailXXXX.ts.net',
   vpnTestPort: '测试端口',
   vpnNote: '设备仍是普通的局域网客户端；由 Tailscale 子网路由器桥接到 tailnet。使用 vpn_status 确认路由是否可用。',
+
+  sectionNetworkIp: '静态 IP（Wi-Fi）',
+  netUseStatic: '使用静态 IP',
+  netUseStaticHint: '关闭时设备通过 DHCP 获取 IP。更改此项需要重启。',
+  netIp: 'IP 地址',
+  netGateway: '网关',
+  netNetmask: '子网掩码',
+  netDns: 'DNS 服务器',
+  netDns2: 'DNS 服务器 2（可选）',
+  netNote: '在下次重启时生效——更改设备 IP 会断开当前连接。关闭静态 IP 以使用 DHCP。',
 
   sectionCapabilities: 'Capability Group',
   capabilitiesDescription:

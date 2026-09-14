@@ -68,6 +68,12 @@ static EXT_RAM_BSS_ATTR char s_ap_ssid_override[33];
 static EXT_RAM_BSS_ATTR char s_ap_password[65];
 static EXT_RAM_BSS_ATTR char s_ap_behavior[16];
 static EXT_RAM_BSS_ATTR char s_ap_ssid_prefix[33];
+static EXT_RAM_BSS_ATTR char s_static_ip[20];
+static EXT_RAM_BSS_ATTR char s_static_gateway[20];
+static EXT_RAM_BSS_ATTR char s_static_netmask[20];
+static EXT_RAM_BSS_ATTR char s_static_dns[20];
+static EXT_RAM_BSS_ATTR char s_static_dns2[20];
+static bool s_use_static_ip;
 static wifi_mode_state_t s_mode = WM_STATE_OFF;
 static esp_netif_t *s_sta_netif;
 static esp_netif_t *s_ap_netif;
@@ -114,6 +120,12 @@ static void sync_owned_config(const wifi_manager_config_t *config)
     copy_owned_string(s_ap_ssid_override, sizeof(s_ap_ssid_override), config->ap_ssid);
     copy_owned_string(s_ap_password, sizeof(s_ap_password), config->ap_password);
     copy_owned_string(s_ap_behavior, sizeof(s_ap_behavior), config->ap_behavior);
+    copy_owned_string(s_static_ip, sizeof(s_static_ip), config->static_ip);
+    copy_owned_string(s_static_gateway, sizeof(s_static_gateway), config->static_gateway);
+    copy_owned_string(s_static_netmask, sizeof(s_static_netmask), config->static_netmask);
+    copy_owned_string(s_static_dns, sizeof(s_static_dns), config->static_dns);
+    copy_owned_string(s_static_dns2, sizeof(s_static_dns2), config->static_dns2);
+    s_use_static_ip = config->use_static_ip;
 
     s_config = *config;
     s_config.sta_ssid = s_sta_ssid[0] ? s_sta_ssid : NULL;
@@ -122,6 +134,11 @@ static void sync_owned_config(const wifi_manager_config_t *config)
     s_config.ap_ssid = s_ap_ssid_override[0] ? s_ap_ssid_override : NULL;
     s_config.ap_password = s_ap_password[0] ? s_ap_password : NULL;
     s_config.ap_behavior = s_ap_behavior[0] ? s_ap_behavior : NULL;
+    s_config.static_ip = s_static_ip[0] ? s_static_ip : NULL;
+    s_config.static_gateway = s_static_gateway[0] ? s_static_gateway : NULL;
+    s_config.static_netmask = s_static_netmask[0] ? s_static_netmask : NULL;
+    s_config.static_dns = s_static_dns[0] ? s_static_dns : NULL;
+    s_config.static_dns2 = s_static_dns2[0] ? s_static_dns2 : NULL;
 }
 
 static const char *wifi_manager_ap_ssid_prefix(void)
@@ -226,6 +243,52 @@ esp_err_t wifi_manager_validate_config(const wifi_manager_config_t *config)
     return ESP_OK;
 }
 
+/* Apply (or clear) a static IPv4 configuration on the STA interface before the
+ * connection is established. When static IP is not requested, the DHCP client is
+ * (re)started so the device falls back to DHCP. */
+static void apply_static_ip_config(void)
+{
+    if (!s_sta_netif) return;
+
+    if (!s_use_static_ip || !s_static_ip[0]) {
+        esp_err_t derr = esp_netif_dhcpc_start(s_sta_netif);
+        if (derr != ESP_OK && derr != ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED) {
+            ESP_LOGW(TAG, "dhcpc_start failed: %s", esp_err_to_name(derr));
+        }
+        return;
+    }
+
+    esp_err_t err = esp_netif_dhcpc_stop(s_sta_netif);
+    if (err != ESP_OK && err != ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED) {
+        ESP_LOGW(TAG, "dhcpc_stop failed: %s", esp_err_to_name(err));
+    }
+
+    esp_netif_ip_info_t ip_info = {0};
+    esp_netif_str_to_ip4(s_static_ip, &ip_info.ip);
+    esp_netif_str_to_ip4(s_static_gateway[0] ? s_static_gateway : "0.0.0.0", &ip_info.gw);
+    esp_netif_str_to_ip4(s_static_netmask[0] ? s_static_netmask : "255.255.255.0", &ip_info.netmask);
+    err = esp_netif_set_ip_info(s_sta_netif, &ip_info);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "set_ip_info(%s) failed: %s", s_static_ip, esp_err_to_name(err));
+        return;
+    }
+
+    if (s_static_dns[0]) {
+        esp_netif_dns_info_t dns = {0};
+        dns.ip.type = ESP_IPADDR_TYPE_V4;
+        esp_netif_str_to_ip4(s_static_dns, &dns.ip.u_addr.ip4);
+        esp_netif_set_dns_info(s_sta_netif, ESP_NETIF_DNS_MAIN, &dns);
+    }
+    if (s_static_dns2[0]) {
+        esp_netif_dns_info_t dns = {0};
+        dns.ip.type = ESP_IPADDR_TYPE_V4;
+        esp_netif_str_to_ip4(s_static_dns2, &dns.ip.u_addr.ip4);
+        esp_netif_set_dns_info(s_sta_netif, ESP_NETIF_DNS_BACKUP, &dns);
+    }
+    ESP_LOGI(TAG, "Static IP applied: ip=%s gw=%s mask=%s dns=%s",
+             s_static_ip, s_static_gateway, s_static_netmask, s_static_dns);
+}
+
 static esp_err_t configure_sta_mode(const wifi_manager_config_t *config)
 {
     esp_err_t err = wifi_manager_validate_config(config);
@@ -260,6 +323,7 @@ static esp_err_t configure_sta_mode(const wifi_manager_config_t *config)
         apply_ap_config();
         err = esp_wifi_set_config(WIFI_IF_STA, &sta_cfg);
         if (err != ESP_OK) return err;
+        apply_static_ip_config();
         return ESP_OK;
     }
 

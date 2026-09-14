@@ -27,6 +27,9 @@ const MqttPage = lazy(() =>
 const VpnPage = lazy(() =>
   import('./pages/VpnPage').then((mod) => ({ default: mod.VpnPage })),
 );
+const NetworkPage = lazy(() =>
+  import('./pages/NetworkPage').then((mod) => ({ default: mod.NetworkPage })),
+);
 const MemoryPage = lazy(() =>
   import('./pages/MemoryPage').then((mod) => ({ default: mod.MemoryPage })),
 );
@@ -267,6 +270,11 @@ const App: Component = () => {
               </Show>
               <Show when={currentTab() === 'vpn'}>
                 <VpnPage
+                  onRestartRequest={() => void handleRestartRequest({ reloadOnSuccess: true })}
+                />
+              </Show>
+              <Show when={currentTab() === 'network'}>
+                <NetworkPage
                   onRestartRequest={() => void handleRestartRequest({ reloadOnSuccess: true })}
                 />
               </Show>

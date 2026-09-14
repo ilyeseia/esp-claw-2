@@ -22,6 +22,7 @@ export const en = {
   navWebReq: 'Network & Search Config',
   navMqtt: 'MQTT',
   navVpn: 'VPN',
+  navNetwork: 'Network',
   navMemory: 'Memory',
   navCapabilities: 'Capabilities',
   navLuaModules: 'Lua Modules',
@@ -228,6 +229,17 @@ export const en = {
   vpnTestPort: 'Test port',
   vpnNote:
     'The device stays a normal LAN client; a Tailscale subnet-router bridges it to your tailnet. Use vpn_status to confirm the route is up.',
+
+  sectionNetworkIp: 'Static IP (Wi-Fi)',
+  netUseStatic: 'Use a static IP',
+  netUseStaticHint: 'When off, the device gets its IP via DHCP. Changing this needs a restart.',
+  netIp: 'IP address',
+  netGateway: 'Gateway',
+  netNetmask: 'Subnet mask',
+  netDns: 'DNS server',
+  netDns2: 'DNS server 2 (optional)',
+  netNote:
+    'Applied on the next reboot — changing the device IP drops the current connection. Leave static off to use DHCP.',
 
   sectionCapabilities: 'Capability Groups',
   capabilitiesDescription:

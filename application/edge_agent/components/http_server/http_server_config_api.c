@@ -88,6 +88,13 @@ static const config_field_def_t CONFIG_FIELDS[] = {
     CONFIG_FIELD("vpn",          vpn_test_host),
     CONFIG_FIELD("vpn",          vpn_test_port),
 
+    CONFIG_FIELD("network",      net_use_static),
+    CONFIG_FIELD("network",      net_ip),
+    CONFIG_FIELD("network",      net_gateway),
+    CONFIG_FIELD("network",      net_netmask),
+    CONFIG_FIELD("network",      net_dns),
+    CONFIG_FIELD("network",      net_dns2),
+
     CONFIG_FIELD("capabilities", enabled_cap_groups),
     CONFIG_FIELD("capabilities", llm_visible_cap_groups),
 

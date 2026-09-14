@@ -73,6 +73,12 @@ typedef struct {
 #define APP_DEFAULT_VPN_GATEWAY              ""
 #define APP_DEFAULT_VPN_TEST_HOST            ""
 #define APP_DEFAULT_VPN_TEST_PORT            "80"
+#define APP_DEFAULT_NET_USE_STATIC           "false"
+#define APP_DEFAULT_NET_IP                   ""
+#define APP_DEFAULT_NET_GATEWAY              ""
+#define APP_DEFAULT_NET_NETMASK              "255.255.255.0"
+#define APP_DEFAULT_NET_DNS                  ""
+#define APP_DEFAULT_NET_DNS2                 ""
 #define APP_DEFAULT_ENABLED_CAP_GROUPS       ""
 #define APP_DEFAULT_LLM_VISIBLE_CAP_GROUPS   ""
 #define APP_DEFAULT_ENABLED_LUA_MODULES      ""
@@ -125,6 +131,12 @@ static const app_config_field_t s_fields[] = {
     APP_CONFIG_FIELD(vpn_gateway, "vpn_gw", APP_DEFAULT_VPN_GATEWAY),
     APP_CONFIG_FIELD(vpn_test_host, "vpn_host", APP_DEFAULT_VPN_TEST_HOST),
     APP_CONFIG_FIELD(vpn_test_port, "vpn_port", APP_DEFAULT_VPN_TEST_PORT),
+    APP_CONFIG_FIELD(net_use_static, "net_static", APP_DEFAULT_NET_USE_STATIC),
+    APP_CONFIG_FIELD(net_ip, "net_ip", APP_DEFAULT_NET_IP),
+    APP_CONFIG_FIELD(net_gateway, "net_gw", APP_DEFAULT_NET_GATEWAY),
+    APP_CONFIG_FIELD(net_netmask, "net_mask", APP_DEFAULT_NET_NETMASK),
+    APP_CONFIG_FIELD(net_dns, "net_dns", APP_DEFAULT_NET_DNS),
+    APP_CONFIG_FIELD(net_dns2, "net_dns2", APP_DEFAULT_NET_DNS2),
     APP_CONFIG_FIELD(enabled_cap_groups, "en_cap_groups", APP_DEFAULT_ENABLED_CAP_GROUPS),
     APP_CONFIG_FIELD(llm_visible_cap_groups, "vis_cap_groups", APP_DEFAULT_LLM_VISIBLE_CAP_GROUPS),
     APP_CONFIG_FIELD(enabled_lua_modules, "en_lua_mods", APP_DEFAULT_ENABLED_LUA_MODULES),
@@ -632,6 +644,12 @@ void app_config_to_claw(const app_config_t *config, app_claw_config_t *out)
     strlcpy(out->vpn_gateway, config->vpn_gateway, sizeof(out->vpn_gateway));
     strlcpy(out->vpn_test_host, config->vpn_test_host, sizeof(out->vpn_test_host));
     strlcpy(out->vpn_test_port, config->vpn_test_port, sizeof(out->vpn_test_port));
+    strlcpy(out->net_use_static, config->net_use_static, sizeof(out->net_use_static));
+    strlcpy(out->net_ip, config->net_ip, sizeof(out->net_ip));
+    strlcpy(out->net_gateway, config->net_gateway, sizeof(out->net_gateway));
+    strlcpy(out->net_netmask, config->net_netmask, sizeof(out->net_netmask));
+    strlcpy(out->net_dns, config->net_dns, sizeof(out->net_dns));
+    strlcpy(out->net_dns2, config->net_dns2, sizeof(out->net_dns2));
     strlcpy(out->enabled_cap_groups, config->enabled_cap_groups, sizeof(out->enabled_cap_groups));
     strlcpy(out->llm_visible_cap_groups, config->llm_visible_cap_groups, sizeof(out->llm_visible_cap_groups));
     strlcpy(out->enabled_lua_modules, config->enabled_lua_modules, sizeof(out->enabled_lua_modules));

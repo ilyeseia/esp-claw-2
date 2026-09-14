@@ -365,6 +365,13 @@ void app_main(void)
         .ap_ssid = s_config->ap_ssid[0] ? s_config->ap_ssid : NULL,
         .ap_password = s_config->ap_password[0] ? s_config->ap_password : NULL,
         .ap_behavior = s_config->ap_behavior,
+        .use_static_ip = (strcmp(s_config->net_use_static, "true") == 0 ||
+                          strcmp(s_config->net_use_static, "1") == 0),
+        .static_ip = s_config->net_ip[0] ? s_config->net_ip : NULL,
+        .static_gateway = s_config->net_gateway[0] ? s_config->net_gateway : NULL,
+        .static_netmask = s_config->net_netmask[0] ? s_config->net_netmask : NULL,
+        .static_dns = s_config->net_dns[0] ? s_config->net_dns : NULL,
+        .static_dns2 = s_config->net_dns2[0] ? s_config->net_dns2 : NULL,
     });
     if (wifi_err != ESP_OK) {
         ESP_LOGE(TAG, "Wi-Fi start failed: %s", esp_err_to_name(wifi_err));

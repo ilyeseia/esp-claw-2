@@ -188,6 +188,14 @@ menu "App Claw Config"
                 LAN subnet-router gateway, not on the device; this only holds the
                 gateway/tailnet settings and probes reachability of a tailnet host.
 
+        config APP_CLAW_CAP_NETCFG
+            bool "Enable network config capability"
+            default y
+            help
+                Enable the cap_netcfg capability (network_status/network_configure)
+                for reading and setting a static STA IP / gateway / DNS. Changes are
+                persisted and applied on the next reboot.
+
         config APP_CLAW_CAP_ROUTER_MGR
             bool "Enable router manager capability"
             select APP_CLAW_CAP_EVENT_ROUTER

@@ -27,6 +27,14 @@ typedef struct {
     const char *ap_behavior;
     uint8_t ap_channel;
     uint8_t ap_max_conn;
+    /* Optional static IP for the STA interface. When use_static_ip is false the
+     * device uses DHCP. Strings are dotted-decimal IPv4 (empty => unset). */
+    bool        use_static_ip;
+    const char *static_ip;
+    const char *static_gateway;
+    const char *static_netmask;
+    const char *static_dns;
+    const char *static_dns2;
 } wifi_manager_config_t;
 
 typedef struct {

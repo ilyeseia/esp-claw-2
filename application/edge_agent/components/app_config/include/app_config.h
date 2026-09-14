@@ -68,6 +68,14 @@ typedef struct {
     char vpn_gateway[APP_CONFIG_STR_LEN];   /* subnet-router host/IP on the LAN (informational) */
     char vpn_test_host[APP_CONFIG_STR_LEN]; /* tailnet host to probe, e.g. "*.ts.net" */
     char vpn_test_port[16];                 /* TCP port to probe, default 80 */
+    /* Static IP for the Wi-Fi STA interface. When net_use_static is false the
+     * device uses DHCP. Applied on (re)connect, so a restart is needed to change. */
+    char net_use_static[8];                 /* "true" / "false" */
+    char net_ip[20];
+    char net_gateway[20];
+    char net_netmask[20];                   /* default 255.255.255.0 */
+    char net_dns[20];                       /* primary DNS */
+    char net_dns2[20];                      /* secondary DNS (optional) */
     char enabled_cap_groups[APP_CONFIG_STR_LEN];
     char llm_visible_cap_groups[APP_CONFIG_STR_LEN];
     char enabled_lua_modules[APP_CONFIG_STR_LEN];

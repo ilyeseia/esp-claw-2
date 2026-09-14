@@ -51,6 +51,12 @@ export type AppConfig = {
   vpn_gateway: string;
   vpn_test_host: string;
   vpn_test_port: string;
+  net_use_static: string;
+  net_ip: string;
+  net_gateway: string;
+  net_netmask: string;
+  net_dns: string;
+  net_dns2: string;
   enabled_cap_groups: string;
   llm_visible_cap_groups: string;
   enabled_lua_modules: string;
@@ -66,6 +72,7 @@ export type ConfigGroup =
   | 'search'
   | 'mqtt'
   | 'vpn'
+  | 'network'
   | 'capabilities'
   | 'skills'
   | 'time';
@@ -118,6 +125,7 @@ export const GROUP_FIELDS: Record<ConfigGroup, (keyof AppConfig)[]> = {
     'mqtt_base_topic',
   ],
   vpn: ['vpn_enabled', 'vpn_gateway', 'vpn_test_host', 'vpn_test_port'],
+  network: ['net_use_static', 'net_ip', 'net_gateway', 'net_netmask', 'net_dns', 'net_dns2'],
   capabilities: ['enabled_cap_groups', 'llm_visible_cap_groups'],
   skills: ['enabled_lua_modules'],
   time: ['time_timezone'],
