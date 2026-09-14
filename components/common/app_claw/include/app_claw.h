@@ -65,6 +65,16 @@ typedef struct {
     char vpn_gateway[APP_CLAW_STR_LEN];
     char vpn_test_host[APP_CLAW_STR_LEN];
     char vpn_test_port[16];
+    char vpn_mode[24];
+    char wg_private_key[64];
+    char wg_address[48];
+    char wg_peer_public_key[64];
+    char wg_endpoint[128];
+    char wg_endpoint_port[16];
+    char wg_allowed_ips[128];
+    char wg_keepalive[16];
+    char wg_preshared_key[64];
+    char wg_make_default[8];
     char net_use_static[8];
     char net_ip[20];
     char net_gateway[20];

@@ -68,6 +68,17 @@ typedef struct {
     char vpn_gateway[APP_CONFIG_STR_LEN];   /* subnet-router host/IP on the LAN (informational) */
     char vpn_test_host[APP_CONFIG_STR_LEN]; /* tailnet host to probe, e.g. "*.ts.net" */
     char vpn_test_port[16];                 /* TCP port to probe, default 80 */
+    /* On-device WireGuard tunnel (mode "wireguard"). Keys are secrets. */
+    char vpn_mode[24];                      /* off | tailscale-gateway | wireguard */
+    char wg_private_key[64];                /* secret */
+    char wg_address[48];                    /* device tunnel IP, optionally "ip/cidr" */
+    char wg_peer_public_key[64];
+    char wg_endpoint[128];                  /* peer host or IP */
+    char wg_endpoint_port[16];              /* default 51820 */
+    char wg_allowed_ips[128];
+    char wg_keepalive[16];                  /* seconds, 0 => off */
+    char wg_preshared_key[64];              /* secret, optional */
+    char wg_make_default[8];                /* "true" => full tunnel */
     /* Static IP for the Wi-Fi STA interface. When net_use_static is false the
      * device uses DHCP. Applied on (re)connect, so a restart is needed to change. */
     char net_use_static[8];                 /* "true" / "false" */

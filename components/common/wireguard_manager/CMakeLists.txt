@@ -1,0 +1,12 @@
+idf_component_register(
+    SRCS
+        "src/wireguard_manager.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        esp_wireguard
+        esp_netif
+        lwip
+        esp_timer
+        freertos
+)

@@ -51,6 +51,16 @@ export type AppConfig = {
   vpn_gateway: string;
   vpn_test_host: string;
   vpn_test_port: string;
+  vpn_mode: string;
+  wg_private_key: string;
+  wg_address: string;
+  wg_peer_public_key: string;
+  wg_endpoint: string;
+  wg_endpoint_port: string;
+  wg_allowed_ips: string;
+  wg_keepalive: string;
+  wg_preshared_key: string;
+  wg_make_default: string;
   net_use_static: string;
   net_ip: string;
   net_gateway: string;
@@ -124,7 +134,22 @@ export const GROUP_FIELDS: Record<ConfigGroup, (keyof AppConfig)[]> = {
     'mqtt_qos',
     'mqtt_base_topic',
   ],
-  vpn: ['vpn_enabled', 'vpn_gateway', 'vpn_test_host', 'vpn_test_port'],
+  vpn: [
+    'vpn_enabled',
+    'vpn_gateway',
+    'vpn_test_host',
+    'vpn_test_port',
+    'vpn_mode',
+    'wg_private_key',
+    'wg_address',
+    'wg_peer_public_key',
+    'wg_endpoint',
+    'wg_endpoint_port',
+    'wg_allowed_ips',
+    'wg_keepalive',
+    'wg_preshared_key',
+    'wg_make_default',
+  ],
   network: ['net_use_static', 'net_ip', 'net_gateway', 'net_netmask', 'net_dns', 'net_dns2'],
   capabilities: ['enabled_cap_groups', 'llm_visible_cap_groups'],
   skills: ['enabled_lua_modules'],

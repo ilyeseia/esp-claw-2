@@ -73,6 +73,16 @@ typedef struct {
 #define APP_DEFAULT_VPN_GATEWAY              ""
 #define APP_DEFAULT_VPN_TEST_HOST            ""
 #define APP_DEFAULT_VPN_TEST_PORT            "80"
+#define APP_DEFAULT_VPN_MODE                 "tailscale-gateway"
+#define APP_DEFAULT_WG_PRIVATE_KEY           ""
+#define APP_DEFAULT_WG_ADDRESS               ""
+#define APP_DEFAULT_WG_PEER_PUBLIC_KEY       ""
+#define APP_DEFAULT_WG_ENDPOINT              ""
+#define APP_DEFAULT_WG_ENDPOINT_PORT         "51820"
+#define APP_DEFAULT_WG_ALLOWED_IPS           ""
+#define APP_DEFAULT_WG_KEEPALIVE             "25"
+#define APP_DEFAULT_WG_PRESHARED_KEY         ""
+#define APP_DEFAULT_WG_MAKE_DEFAULT          "false"
 #define APP_DEFAULT_NET_USE_STATIC           "false"
 #define APP_DEFAULT_NET_IP                   ""
 #define APP_DEFAULT_NET_GATEWAY              ""
@@ -131,6 +141,16 @@ static const app_config_field_t s_fields[] = {
     APP_CONFIG_FIELD(vpn_gateway, "vpn_gw", APP_DEFAULT_VPN_GATEWAY),
     APP_CONFIG_FIELD(vpn_test_host, "vpn_host", APP_DEFAULT_VPN_TEST_HOST),
     APP_CONFIG_FIELD(vpn_test_port, "vpn_port", APP_DEFAULT_VPN_TEST_PORT),
+    APP_CONFIG_FIELD(vpn_mode, "vpn_mode", APP_DEFAULT_VPN_MODE),
+    APP_CONFIG_FIELD(wg_private_key, "wg_priv", APP_DEFAULT_WG_PRIVATE_KEY),
+    APP_CONFIG_FIELD(wg_address, "wg_addr", APP_DEFAULT_WG_ADDRESS),
+    APP_CONFIG_FIELD(wg_peer_public_key, "wg_peer_pub", APP_DEFAULT_WG_PEER_PUBLIC_KEY),
+    APP_CONFIG_FIELD(wg_endpoint, "wg_endpoint", APP_DEFAULT_WG_ENDPOINT),
+    APP_CONFIG_FIELD(wg_endpoint_port, "wg_port", APP_DEFAULT_WG_ENDPOINT_PORT),
+    APP_CONFIG_FIELD(wg_allowed_ips, "wg_allowed", APP_DEFAULT_WG_ALLOWED_IPS),
+    APP_CONFIG_FIELD(wg_keepalive, "wg_keepalive", APP_DEFAULT_WG_KEEPALIVE),
+    APP_CONFIG_FIELD(wg_preshared_key, "wg_psk", APP_DEFAULT_WG_PRESHARED_KEY),
+    APP_CONFIG_FIELD(wg_make_default, "wg_default", APP_DEFAULT_WG_MAKE_DEFAULT),
     APP_CONFIG_FIELD(net_use_static, "net_static", APP_DEFAULT_NET_USE_STATIC),
     APP_CONFIG_FIELD(net_ip, "net_ip", APP_DEFAULT_NET_IP),
     APP_CONFIG_FIELD(net_gateway, "net_gw", APP_DEFAULT_NET_GATEWAY),
@@ -644,6 +664,16 @@ void app_config_to_claw(const app_config_t *config, app_claw_config_t *out)
     strlcpy(out->vpn_gateway, config->vpn_gateway, sizeof(out->vpn_gateway));
     strlcpy(out->vpn_test_host, config->vpn_test_host, sizeof(out->vpn_test_host));
     strlcpy(out->vpn_test_port, config->vpn_test_port, sizeof(out->vpn_test_port));
+    strlcpy(out->vpn_mode, config->vpn_mode, sizeof(out->vpn_mode));
+    strlcpy(out->wg_private_key, config->wg_private_key, sizeof(out->wg_private_key));
+    strlcpy(out->wg_address, config->wg_address, sizeof(out->wg_address));
+    strlcpy(out->wg_peer_public_key, config->wg_peer_public_key, sizeof(out->wg_peer_public_key));
+    strlcpy(out->wg_endpoint, config->wg_endpoint, sizeof(out->wg_endpoint));
+    strlcpy(out->wg_endpoint_port, config->wg_endpoint_port, sizeof(out->wg_endpoint_port));
+    strlcpy(out->wg_allowed_ips, config->wg_allowed_ips, sizeof(out->wg_allowed_ips));
+    strlcpy(out->wg_keepalive, config->wg_keepalive, sizeof(out->wg_keepalive));
+    strlcpy(out->wg_preshared_key, config->wg_preshared_key, sizeof(out->wg_preshared_key));
+    strlcpy(out->wg_make_default, config->wg_make_default, sizeof(out->wg_make_default));
     strlcpy(out->net_use_static, config->net_use_static, sizeof(out->net_use_static));
     strlcpy(out->net_ip, config->net_ip, sizeof(out->net_ip));
     strlcpy(out->net_gateway, config->net_gateway, sizeof(out->net_gateway));

@@ -1,0 +1,5 @@
+dependencies:
+  wireguard_manager:
+    rules:
+      - if: $CONFIG{APP_CLAW_VPN_WIREGUARD} == True
+    path: ../../common/wireguard_manager

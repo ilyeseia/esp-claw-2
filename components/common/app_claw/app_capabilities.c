@@ -837,6 +837,16 @@ static esp_err_t app_cap_vpn_persist(const cap_vpn_config_t *config, void *user_
     strlcpy(app->vpn_gateway, config->gateway ? config->gateway : "", sizeof(app->vpn_gateway));
     strlcpy(app->vpn_test_host, config->test_host ? config->test_host : "", sizeof(app->vpn_test_host));
     snprintf(app->vpn_test_port, sizeof(app->vpn_test_port), "%u", (unsigned)config->test_port);
+    strlcpy(app->vpn_mode, config->mode ? config->mode : "", sizeof(app->vpn_mode));
+    strlcpy(app->wg_private_key, config->wg_private_key ? config->wg_private_key : "", sizeof(app->wg_private_key));
+    strlcpy(app->wg_address, config->wg_address ? config->wg_address : "", sizeof(app->wg_address));
+    strlcpy(app->wg_peer_public_key, config->wg_peer_public_key ? config->wg_peer_public_key : "", sizeof(app->wg_peer_public_key));
+    strlcpy(app->wg_endpoint, config->wg_endpoint ? config->wg_endpoint : "", sizeof(app->wg_endpoint));
+    snprintf(app->wg_endpoint_port, sizeof(app->wg_endpoint_port), "%u", (unsigned)config->wg_endpoint_port);
+    strlcpy(app->wg_allowed_ips, config->wg_allowed_ips ? config->wg_allowed_ips : "", sizeof(app->wg_allowed_ips));
+    snprintf(app->wg_keepalive, sizeof(app->wg_keepalive), "%u", (unsigned)config->wg_keepalive);
+    strlcpy(app->wg_preshared_key, config->wg_preshared_key ? config->wg_preshared_key : "", sizeof(app->wg_preshared_key));
+    strlcpy(app->wg_make_default, config->wg_make_default ? "true" : "false", sizeof(app->wg_make_default));
 
     err = app_claw_apply_config(app);
     free(app);
@@ -850,11 +860,23 @@ static esp_err_t app_cap_prepare_vpn(const app_claw_config_t *config,
 
     bool enabled = config->vpn_enabled[0] &&
                    (strcmp(config->vpn_enabled, "true") == 0 || strcmp(config->vpn_enabled, "1") == 0);
+    bool wg_default = config->wg_make_default[0] &&
+                      (strcmp(config->wg_make_default, "true") == 0 || strcmp(config->wg_make_default, "1") == 0);
     cap_vpn_config_t vpn_cfg = {
+        .mode = config->vpn_mode,
         .enabled = enabled,
         .gateway = config->vpn_gateway,
         .test_host = config->vpn_test_host,
         .test_port = (uint16_t)atoi(config->vpn_test_port),
+        .wg_private_key = config->wg_private_key,
+        .wg_address = config->wg_address,
+        .wg_peer_public_key = config->wg_peer_public_key,
+        .wg_endpoint = config->wg_endpoint,
+        .wg_endpoint_port = (uint16_t)atoi(config->wg_endpoint_port),
+        .wg_allowed_ips = config->wg_allowed_ips,
+        .wg_keepalive = (uint16_t)atoi(config->wg_keepalive),
+        .wg_preshared_key = config->wg_preshared_key,
+        .wg_make_default = wg_default,
     };
 
     esp_err_t err = cap_vpn_set_config(&vpn_cfg);

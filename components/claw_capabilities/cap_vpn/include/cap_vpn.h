@@ -24,10 +24,26 @@ extern "C" {
  * the Web UI can confirm the route is up. No WireGuard runs on the device.
  */
 typedef struct {
+    /* mode: "off" | "tailscale-gateway" | "wireguard" (NULL/empty => tailscale-gateway) */
+    const char *mode;
+
+    /* Tailscale gateway mode */
     bool        enabled;      /* gateway integration active */
     const char *gateway;      /* subnet-router / gateway host or IP on the LAN (informational) */
     const char *test_host;    /* tailnet host to probe, e.g. "searxng.tailXXXX.ts.net" */
     uint16_t    test_port;    /* TCP port to probe, 0 => 80 */
+
+    /* WireGuard tunnel mode (only used when mode == "wireguard" and the
+     * APP_CLAW_VPN_WIREGUARD build option is enabled). */
+    const char *wg_private_key;     /* device private key (secret) */
+    const char *wg_address;         /* device tunnel IP, optionally "ip/cidr" */
+    const char *wg_peer_public_key; /* peer/server public key */
+    const char *wg_endpoint;        /* peer host or IP */
+    uint16_t    wg_endpoint_port;   /* 0 => 51820 */
+    const char *wg_allowed_ips;     /* informational (routing) */
+    uint16_t    wg_keepalive;       /* persistent keepalive seconds, 0 => off */
+    const char *wg_preshared_key;   /* optional (secret) */
+    bool        wg_make_default;    /* route default gateway through the tunnel */
 } cap_vpn_config_t;
 
 /* Apply configuration. Safe to call again to update settings. */

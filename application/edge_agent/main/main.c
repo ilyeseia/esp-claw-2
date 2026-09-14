@@ -188,6 +188,16 @@ static void main_copy_claw_to_app_config(const app_claw_config_t *src, app_confi
     strlcpy(dst->vpn_gateway, src->vpn_gateway, sizeof(dst->vpn_gateway));
     strlcpy(dst->vpn_test_host, src->vpn_test_host, sizeof(dst->vpn_test_host));
     strlcpy(dst->vpn_test_port, src->vpn_test_port, sizeof(dst->vpn_test_port));
+    strlcpy(dst->vpn_mode, src->vpn_mode, sizeof(dst->vpn_mode));
+    strlcpy(dst->wg_private_key, src->wg_private_key, sizeof(dst->wg_private_key));
+    strlcpy(dst->wg_address, src->wg_address, sizeof(dst->wg_address));
+    strlcpy(dst->wg_peer_public_key, src->wg_peer_public_key, sizeof(dst->wg_peer_public_key));
+    strlcpy(dst->wg_endpoint, src->wg_endpoint, sizeof(dst->wg_endpoint));
+    strlcpy(dst->wg_endpoint_port, src->wg_endpoint_port, sizeof(dst->wg_endpoint_port));
+    strlcpy(dst->wg_allowed_ips, src->wg_allowed_ips, sizeof(dst->wg_allowed_ips));
+    strlcpy(dst->wg_keepalive, src->wg_keepalive, sizeof(dst->wg_keepalive));
+    strlcpy(dst->wg_preshared_key, src->wg_preshared_key, sizeof(dst->wg_preshared_key));
+    strlcpy(dst->wg_make_default, src->wg_make_default, sizeof(dst->wg_make_default));
     strlcpy(dst->net_use_static, src->net_use_static, sizeof(dst->net_use_static));
     strlcpy(dst->net_ip, src->net_ip, sizeof(dst->net_ip));
     strlcpy(dst->net_gateway, src->net_gateway, sizeof(dst->net_gateway));

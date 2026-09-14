@@ -104,6 +104,11 @@ dependencies:
       - if: $CONFIG{APP_CLAW_CAP_VPN} == True
     path: ../../claw_capabilities/cap_vpn
 
+  wireguard_manager:
+    rules:
+      - if: $CONFIG{APP_CLAW_VPN_WIREGUARD} == True
+    path: ../wireguard_manager
+
   cap_netcfg:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_NETCFG} == True

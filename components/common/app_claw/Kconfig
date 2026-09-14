@@ -188,6 +188,17 @@ menu "App Claw Config"
                 LAN subnet-router gateway, not on the device; this only holds the
                 gateway/tailnet settings and probes reachability of a tailnet host.
 
+        config APP_CLAW_VPN_WIREGUARD
+            bool "Enable on-device WireGuard tunnel (esp_wireguard)"
+            depends on APP_CLAW_CAP_VPN
+            default n
+            help
+                Add a real on-device WireGuard tunnel to cap_vpn via the
+                trombik/esp_wireguard component (lwIP). When enabled, cap_vpn gains
+                a "wireguard" mode with wireguard_configure / vpn_connect tools.
+                Requires SNTP time. Pulls in the esp_wireguard managed component and
+                the wireguard_manager component. Default n to keep other boards lean.
+
         config APP_CLAW_CAP_NETCFG
             bool "Enable network config capability"
             default y
