@@ -63,7 +63,7 @@ The key demo settings include:
 - LLM API Key / Provider / Model
 - QQ App ID / App Secret
 - Telegram Bot Token
-- Brave / Tavily Search Key
+- Web Search Provider (SearXNG URL, or Brave / Tavily Search Key)
 - Timezone
 
 Key Notes:

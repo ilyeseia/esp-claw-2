@@ -1,7 +1,7 @@
 ---
 {
   "name": "cap_web_search",
-  "description": "Search the public web for current information through the configured Tavily or Brave provider.",
+  "description": "Search the public web for current information through the configured provider (SearXNG, Tavily, or Brave).",
   "metadata": {
     "cap_groups": [
       "cap_web_search"
@@ -25,9 +25,11 @@ Use this skill when the user needs current public web information that should be
 - `web_search`: search the web with the configured provider and return concise formatted results.
 
 ## Provider behavior
-- The runtime prefers `Tavily` when a Tavily API key is configured.
-- If Tavily is not configured but Brave Search is configured, it falls back to `Brave`.
-- If neither provider key is configured, the capability returns an error instead of search results.
+- The active provider is controlled by the `search_provider` setting: `auto`, `searxng`, `tavily`, or `brave`.
+- In `auto` mode (the default), the runtime prefers a configured self-hosted `SearXNG` instance first, then falls back to `Tavily`, then `Brave`.
+- When `search_provider` is explicitly set to `searxng`, `tavily`, or `brave`, that provider is used — with no silent fallback to another provider if its key/URL is missing.
+- If no provider ends up configured (no SearXNG URL and no Tavily/Brave key), the capability returns an error instead of search results.
+- Results are normalized to the same title/URL/snippet format regardless of which provider answered.
 
 ## Calling rules
 - Call `web_search` directly. Do not route web search through CLI wrappers unless the user explicitly asks for console commands.
