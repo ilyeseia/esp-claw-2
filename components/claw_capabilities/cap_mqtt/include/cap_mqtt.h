@@ -35,7 +35,17 @@ typedef struct {
  */
 esp_err_t cap_mqtt_set_config(const cap_mqtt_config_t *config);
 
-/* Registers the cap_mqtt group (mqtt_publish, mqtt_status, mqtt_subscribe). */
+/*
+ * Optional persistence hook. When set, the (root-agent-only) mqtt_configure tool
+ * writes the applied settings through this callback so they survive a reboot.
+ * The app wires this to its NVS-backed config store. Without it, mqtt_configure
+ * still applies settings live but they are lost on restart.
+ */
+typedef esp_err_t (*cap_mqtt_persist_fn)(const cap_mqtt_config_t *config, void *user_ctx);
+esp_err_t cap_mqtt_set_persist_provider(cap_mqtt_persist_fn persist, void *user_ctx);
+
+/* Registers the cap_mqtt group (mqtt_publish, mqtt_status, mqtt_subscribe,
+ * mqtt_send_message, mqtt_configure). */
 esp_err_t cap_mqtt_register_group(void);
 
 #ifdef __cplusplus

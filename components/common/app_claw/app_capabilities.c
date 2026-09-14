@@ -8,6 +8,7 @@
 #include "app_lua_modules.h"
 
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
@@ -737,6 +738,43 @@ static bool app_cap_config_bool(const char *value)
     return value && (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
 }
 
+/* Persist hook for the mqtt_configure tool: fold the applied MQTT settings back
+ * into the full app config and save them so they survive a reboot. */
+static esp_err_t app_cap_mqtt_persist(const cap_mqtt_config_t *config, void *user_ctx)
+{
+    (void)user_ctx;
+    if (!config) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    app_claw_config_t *app = calloc(1, sizeof(*app));
+    if (!app) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    esp_err_t err = app_claw_get_config(app);
+    if (err != ESP_OK) {
+        free(app);
+        return err;
+    }
+
+    strlcpy(app->mqtt_enabled, config->enabled ? "true" : "false", sizeof(app->mqtt_enabled));
+    strlcpy(app->mqtt_broker, config->broker ? config->broker : "", sizeof(app->mqtt_broker));
+    snprintf(app->mqtt_port, sizeof(app->mqtt_port), "%u", (unsigned)config->port);
+    strlcpy(app->mqtt_tls_enabled, config->tls_enabled ? "true" : "false", sizeof(app->mqtt_tls_enabled));
+    strlcpy(app->mqtt_username, config->username ? config->username : "", sizeof(app->mqtt_username));
+    strlcpy(app->mqtt_password, config->password ? config->password : "", sizeof(app->mqtt_password));
+    strlcpy(app->mqtt_client_id, config->client_id ? config->client_id : "", sizeof(app->mqtt_client_id));
+    snprintf(app->mqtt_keepalive, sizeof(app->mqtt_keepalive), "%u", (unsigned)config->keepalive);
+    snprintf(app->mqtt_qos, sizeof(app->mqtt_qos), "%u", (unsigned)config->qos);
+    strlcpy(app->mqtt_base_topic, config->base_topic ? config->base_topic : "espclaw",
+            sizeof(app->mqtt_base_topic));
+
+    err = app_claw_apply_config(app);
+    free(app);
+    return err;
+}
+
 static esp_err_t app_cap_prepare_mqtt(const app_claw_config_t *config,
                                       const app_claw_storage_paths_t *paths)
 {
@@ -755,7 +793,11 @@ static esp_err_t app_cap_prepare_mqtt(const app_claw_config_t *config,
         .base_topic = config->mqtt_base_topic,
     };
 
-    return cap_mqtt_set_config(&mqtt_cfg);
+    esp_err_t err = cap_mqtt_set_config(&mqtt_cfg);
+    if (err != ESP_OK) {
+        return err;
+    }
+    return cap_mqtt_set_persist_provider(app_cap_mqtt_persist, NULL);
 }
 
 static esp_err_t app_cap_register_mqtt(const app_claw_config_t *config,

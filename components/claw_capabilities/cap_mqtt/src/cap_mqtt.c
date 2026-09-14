@@ -60,9 +60,18 @@ typedef struct {
     mqtt_manager_handle_t mqtt;
     QueueHandle_t cmd_queue;   /* items: char * (heap payload, NUL-terminated) */
     TaskHandle_t worker;
+    cap_mqtt_persist_fn persist;
+    void *persist_ctx;
 } cap_mqtt_state_t;
 
 static cap_mqtt_state_t s_state = {0};
+
+esp_err_t cap_mqtt_set_persist_provider(cap_mqtt_persist_fn persist, void *user_ctx)
+{
+    s_state.persist = persist;
+    s_state.persist_ctx = user_ctx;
+    return ESP_OK;
+}
 
 static const char *cap_mqtt_json_string(cJSON *root, const char *key)
 {
@@ -552,6 +561,146 @@ static esp_err_t cap_mqtt_send_message_execute(const char *input_json,
     return ESP_OK;
 }
 
+static int cap_mqtt_json_int(cJSON *root, const char *key, int fallback)
+{
+    cJSON *item = cJSON_GetObjectItem(root, key);
+    if (cJSON_IsNumber(item)) {
+        return item->valueint;
+    }
+    if (cJSON_IsString(item) && item->valuestring && item->valuestring[0]) {
+        return atoi(item->valuestring);
+    }
+    return fallback;
+}
+
+static bool cap_mqtt_json_bool(cJSON *root, const char *key, bool fallback)
+{
+    cJSON *item = cJSON_GetObjectItem(root, key);
+    if (cJSON_IsBool(item)) {
+        return cJSON_IsTrue(item);
+    }
+    if (cJSON_IsString(item) && item->valuestring) {
+        return strcmp(item->valuestring, "true") == 0 || strcmp(item->valuestring, "1") == 0;
+    }
+    return fallback;
+}
+
+/*
+ * mqtt_configure: set the broker connection from a chat/tool call, apply it live
+ * and (if a persist provider is wired) save it to NVS so it survives reboot.
+ * Root-agent only + restricted: changing the broker/credentials is sensitive, so
+ * sub-agents (which may be handling untrusted content) are not allowed to call it.
+ * The password is never echoed back in the result.
+ */
+static esp_err_t cap_mqtt_configure_execute(const char *input_json,
+                                            const claw_cap_call_context_t *ctx,
+                                            char *output,
+                                            size_t output_size)
+{
+    (void)ctx;
+
+    cJSON *input = cJSON_Parse(input_json);
+    if (!input) {
+        snprintf(output, output_size, "Error: invalid input JSON");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const char *broker = cap_mqtt_json_string(input, "broker");
+    if (!broker || !broker[0]) {
+        cJSON_Delete(input);
+        snprintf(output, output_size, "Error: 'broker' is required");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    bool tls = cap_mqtt_json_bool(input, "tls", false);
+    bool enabled = cap_mqtt_json_bool(input, "enabled", true);
+    int port = cap_mqtt_json_int(input, "port", tls ? 8883 : 1883);
+    int keepalive = cap_mqtt_json_int(input, "keepalive", 60);
+    int qos = cap_mqtt_json_int(input, "qos", 0);
+
+    const char *username = cap_mqtt_json_string(input, "username");
+    const char *password = cap_mqtt_json_string(input, "password");
+    const char *client_id = cap_mqtt_json_string(input, "client_id");
+    const char *base_topic = cap_mqtt_json_string(input, "base_topic");
+
+    /* Copy into local buffers; set_config/mqtt_manager copy them into the handle. */
+    char broker_buf[128];
+    char user_buf[128];
+    char pass_buf[192];
+    char client_buf[64];
+    char topic_buf[64];
+    strlcpy(broker_buf, broker, sizeof(broker_buf));
+    strlcpy(user_buf, username ? username : "", sizeof(user_buf));
+    strlcpy(pass_buf, password ? password : "", sizeof(pass_buf));
+    strlcpy(client_buf, client_id ? client_id : "", sizeof(client_buf));
+    strlcpy(topic_buf, (base_topic && base_topic[0]) ? base_topic : "espclaw", sizeof(topic_buf));
+    cJSON_Delete(input);
+
+    if (port < 1 || port > 65535) {
+        snprintf(output, output_size, "Error: port must be between 1 and 65535");
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (qos < 0 || qos > 1) {
+        qos = 0;
+    }
+    if (keepalive < 1) {
+        keepalive = 60;
+    }
+
+    cap_mqtt_config_t cfg = {
+        .enabled = enabled,
+        .broker = broker_buf,
+        .port = (uint16_t)port,
+        .tls_enabled = tls,
+        .username = user_buf,
+        .password = pass_buf,
+        .client_id = client_buf,
+        .keepalive = (uint16_t)keepalive,
+        .qos = (uint8_t)qos,
+        .base_topic = topic_buf,
+    };
+
+    esp_err_t err = cap_mqtt_set_config(&cfg);
+    if (err != ESP_OK) {
+        snprintf(output, output_size, "Error: failed to apply MQTT config (%s)", esp_err_to_name(err));
+        return err;
+    }
+
+    bool persisted = false;
+    if (s_state.persist) {
+        esp_err_t perr = s_state.persist(&cfg, s_state.persist_ctx);
+        persisted = (perr == ESP_OK);
+        if (!persisted) {
+            ESP_LOGW(TAG, "MQTT config applied live but persist failed: %s", esp_err_to_name(perr));
+        }
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        snprintf(output, output_size, "Error: out of memory");
+        return ESP_ERR_NO_MEM;
+    }
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON_AddBoolToObject(root, "enabled", enabled);
+    cJSON_AddStringToObject(root, "broker", broker_buf);
+    cJSON_AddNumberToObject(root, "port", port);
+    cJSON_AddBoolToObject(root, "tls", tls);
+    cJSON_AddBoolToObject(root, "auth", user_buf[0] != '\0');
+    cJSON_AddBoolToObject(root, "persisted", persisted);
+    cJSON_AddStringToObject(root, "note",
+                            enabled ? "Applied live; connecting in the background — check mqtt_status."
+                                    : "MQTT disabled.");
+    char *text = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!text) {
+        snprintf(output, output_size, "Error: failed to encode result");
+        return ESP_ERR_NO_MEM;
+    }
+    strlcpy(output, text, output_size);
+    cJSON_free(text);
+    return ESP_OK;
+}
+
 static const claw_cap_descriptor_t s_mqtt_descriptors[] = {
     {
         .id = "mqtt_publish",
@@ -607,6 +756,30 @@ static const claw_cap_descriptor_t s_mqtt_descriptors[] = {
         "\"message\":{\"type\":\"string\"}},"
         "\"required\":[\"message\"]}",
         .execute = cap_mqtt_send_message_execute,
+    },
+    {
+        .id = "mqtt_configure",
+        .name = "mqtt_configure",
+        .family = "network",
+        .description = "Configure the MQTT broker connection (broker/port/TLS/credentials/base_topic), "
+                       "apply it live and persist it across reboots. Restricted, root-agent only.",
+        .kind = CLAW_CAP_KIND_CALLABLE,
+        .cap_flags = CLAW_CAP_FLAG_CALLABLE_BY_LLM | CLAW_CAP_FLAG_RESTRICTED |
+                     CLAW_CAP_FLAG_ROOT_AGENT_ONLY,
+        .input_schema_json =
+        "{\"type\":\"object\",\"properties\":{"
+        "\"broker\":{\"type\":\"string\",\"description\":\"host or IP, no scheme\"},"
+        "\"port\":{\"type\":\"integer\"},"
+        "\"tls\":{\"type\":\"boolean\"},"
+        "\"username\":{\"type\":\"string\"},"
+        "\"password\":{\"type\":\"string\"},"
+        "\"client_id\":{\"type\":\"string\"},"
+        "\"keepalive\":{\"type\":\"integer\"},"
+        "\"qos\":{\"type\":\"integer\",\"enum\":[0,1]},"
+        "\"base_topic\":{\"type\":\"string\"},"
+        "\"enabled\":{\"type\":\"boolean\"}},"
+        "\"required\":[\"broker\"]}",
+        .execute = cap_mqtt_configure_execute,
     },
 };
 
