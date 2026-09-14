@@ -36,6 +36,18 @@ const PROVIDER_LINKS: Record<string, ExternalLinkPair> = {
     docsUrl: 'https://platform.minimaxi.com/docs/api-reference/api-overview',
     consoleUrl: 'https://platform.minimaxi.com/user-center/basic-information',
   },
+  openrouter: {
+    docsUrl: 'https://openrouter.ai/docs',
+    consoleUrl: 'https://openrouter.ai/keys',
+  },
+  nvidia: {
+    docsUrl: 'https://docs.api.nvidia.com/',
+    consoleUrl: 'https://build.nvidia.com/',
+  },
+  groq: {
+    docsUrl: 'https://console.groq.com/docs',
+    consoleUrl: 'https://console.groq.com/keys',
+  },
 };
 
 export const TAVILY_API_KEY_URL = 'https://app.tavily.com/';

@@ -23,6 +23,9 @@ type PresetKey =
   | 'kimi_cn'
   | 'minimax_global'
   | 'minimax_cn'
+  | 'openrouter'
+  | 'nvidia'
+  | 'groq'
   | 'anthropic_compatible'
   | 'openai_compatible';
 
@@ -136,6 +139,42 @@ const PROVIDER_PRESETS: Record<PresetKey, ProviderPreset> = {
     llm_model: 'MiniMax-M3',
     advanced: false,
   },
+  openrouter: {
+    llm_backend_type: 'openai_compatible',
+    llm_base_url: 'https://openrouter.ai/api/v1',
+    llm_auth_type: 'bearer',
+    llm_max_tokens_field: 'max_tokens',
+    llm_default_image_max_bytes: '524288',
+    llm_supports_tools: true,
+    llm_supports_vision: false,
+    llm_image_remote_url_only: false,
+    llm_model: 'meta-llama/llama-3.3-70b-instruct:free',
+    advanced: false,
+  },
+  nvidia: {
+    llm_backend_type: 'openai_compatible',
+    llm_base_url: 'https://integrate.api.nvidia.com/v1',
+    llm_auth_type: 'bearer',
+    llm_max_tokens_field: 'max_tokens',
+    llm_default_image_max_bytes: '524288',
+    llm_supports_tools: true,
+    llm_supports_vision: false,
+    llm_image_remote_url_only: false,
+    llm_model: 'nvidia/nemotron-3.5-lightning-30b-a3b',
+    advanced: false,
+  },
+  groq: {
+    llm_backend_type: 'openai_compatible',
+    llm_base_url: 'https://api.groq.com/openai/v1',
+    llm_auth_type: 'bearer',
+    llm_max_tokens_field: 'max_tokens',
+    llm_default_image_max_bytes: '524288',
+    llm_supports_tools: true,
+    llm_supports_vision: false,
+    llm_image_remote_url_only: false,
+    llm_model: 'llama-3.3-70b-versatile',
+    advanced: false,
+  },
   openai_compatible: {
     llm_backend_type: 'openai_compatible',
     llm_base_url: 'https://api.openai.com/v1',
@@ -171,6 +210,9 @@ const PRESET_BUTTONS: PresetKey[] = [
   'kimi_cn',
   'minimax_global',
   'minimax_cn',
+  'openrouter',
+  'nvidia',
+  'groq',
   'openai_compatible',
   'anthropic_compatible',
 ];
@@ -188,6 +230,12 @@ type LlmForm = {
   llm_supports_tools: boolean;
   llm_supports_vision: boolean;
   llm_image_remote_url_only: boolean;
+  llm2_api_key: string;
+  llm2_model: string;
+  llm2_backend_type: string;
+  llm2_base_url: string;
+  llm2_auth_type: string;
+  llm2_max_tokens_field: string;
 };
 
 function isPositiveInteger(value: string): boolean {
@@ -216,6 +264,12 @@ function presetLabel(key: PresetKey): string {
       return t('llmProviderMinimaxGlobal') as string;
     case 'minimax_cn':
       return t('llmProviderMinimaxCn') as string;
+    case 'openrouter':
+      return t('llmProviderOpenRouter') as string;
+    case 'nvidia':
+      return t('llmProviderNvidia') as string;
+    case 'groq':
+      return t('llmProviderGroq') as string;
     case 'openai_compatible':
       return t('llmProviderOpenaiCompatible') as string;
     case 'anthropic_compatible':
@@ -240,6 +294,12 @@ export const LlmPage: Component = () => {
       llm_supports_tools: parseBool(config.llm_supports_tools),
       llm_supports_vision: parseBool(config.llm_supports_vision),
       llm_image_remote_url_only: parseBool(config.llm_image_remote_url_only),
+      llm2_api_key: config.llm2_api_key ?? '',
+      llm2_model: config.llm2_model ?? '',
+      llm2_backend_type: config.llm2_backend_type ?? '',
+      llm2_base_url: config.llm2_base_url ?? '',
+      llm2_auth_type: config.llm2_auth_type ?? '',
+      llm2_max_tokens_field: config.llm2_max_tokens_field ?? '',
     }),
     fromForm: (form) => ({
       llm_api_key: form.llm_api_key.trim(),
@@ -254,13 +314,25 @@ export const LlmPage: Component = () => {
       llm_supports_tools: String(form.llm_supports_tools),
       llm_supports_vision: String(form.llm_supports_vision),
       llm_image_remote_url_only: String(form.llm_image_remote_url_only),
+      llm2_api_key: form.llm2_api_key.trim(),
+      llm2_model: form.llm2_model.trim(),
+      llm2_backend_type: form.llm2_backend_type.trim(),
+      llm2_base_url: form.llm2_base_url.trim(),
+      llm2_auth_type: form.llm2_auth_type.trim(),
+      llm2_max_tokens_field: form.llm2_max_tokens_field.trim(),
     }),
   });
   const [validationError, setValidationError] = createSignal<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = createSignal(false);
+  const [fallbackOpen, setFallbackOpen] = createSignal(false);
   const [selectedPreset, setSelectedPreset] = createSignal<PresetKey | null>(null);
+  const [selectedFallbackPreset, setSelectedFallbackPreset] = createSignal<PresetKey | null>(null);
   const providerLinks = createMemo(() => {
     const key = selectedPreset();
+    return key ? getProviderLinks(key) : undefined;
+  });
+  const fallbackProviderLinks = createMemo(() => {
+    const key = selectedFallbackPreset();
     return key ? getProviderLinks(key) : undefined;
   });
 
@@ -276,6 +348,12 @@ export const LlmPage: Component = () => {
     void tab.form.llm_supports_tools;
     void tab.form.llm_supports_vision;
     void tab.form.llm_image_remote_url_only;
+    void tab.form.llm2_api_key;
+    void tab.form.llm2_model;
+    void tab.form.llm2_backend_type;
+    void tab.form.llm2_base_url;
+    void tab.form.llm2_auth_type;
+    void tab.form.llm2_max_tokens_field;
     setValidationError(null);
   });
 
@@ -292,6 +370,26 @@ export const LlmPage: Component = () => {
     tab.setForm('llm_model', preset.llm_model);
     setSelectedPreset(key);
     setAdvancedOpen(preset.advanced);
+  };
+
+  const applyFallbackPreset = (key: PresetKey) => {
+    const preset = PROVIDER_PRESETS[key];
+    tab.setForm('llm2_backend_type', preset.llm_backend_type);
+    tab.setForm('llm2_base_url', preset.llm_base_url);
+    tab.setForm('llm2_auth_type', preset.llm_auth_type);
+    tab.setForm('llm2_max_tokens_field', preset.llm_max_tokens_field);
+    tab.setForm('llm2_model', preset.llm_model);
+    setSelectedFallbackPreset(key);
+  };
+
+  const clearFallback = () => {
+    tab.setForm('llm2_api_key', '');
+    tab.setForm('llm2_model', '');
+    tab.setForm('llm2_backend_type', '');
+    tab.setForm('llm2_base_url', '');
+    tab.setForm('llm2_auth_type', '');
+    tab.setForm('llm2_max_tokens_field', '');
+    setSelectedFallbackPreset(null);
   };
 
   const handleSave = async () => {
@@ -472,6 +570,82 @@ export const LlmPage: Component = () => {
                 checked={tab.form.llm_image_remote_url_only}
                 onChange={(checked) => tab.setForm('llm_image_remote_url_only', checked)}
                 label={t('llmImageRemoteUrlOnly') as string}
+              />
+            </div>
+          </div>
+        </CollapsibleConfigBlock>
+        <CollapsibleConfigBlock
+          title={t('llmFallbackTitle') as string}
+          defaultOpen={false}
+          open={fallbackOpen()}
+          onOpenChange={setFallbackOpen}
+        >
+          <div class="flex flex-col gap-3 pt-2">
+            <p class="text-[0.78rem] text-[var(--color-text-muted)] m-0">{t('llmFallbackHint')}</p>
+            <div class="flex flex-col gap-2">
+              <div class="flex flex-wrap gap-2">
+                {PRESET_BUTTONS.map((key) => (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    active={selectedFallbackPreset() === key}
+                    onClick={() => applyFallbackPreset(key)}
+                  >
+                    {presetLabel(key)}
+                  </Button>
+                ))}
+                <Button size="sm" variant="secondary" onClick={clearFallback}>
+                  {t('llmFallbackClear') as string}
+                </Button>
+              </div>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <TextInput
+                type="password"
+                label={
+                  <>
+                    {t('llmFallbackApiKey')}
+                    <Show when={fallbackProviderLinks()}>
+                      {(links) => (
+                        <LabelLink href={links().consoleUrl}>
+                          {t('llmProviderConsole') as string} ↗
+                        </LabelLink>
+                      )}
+                    </Show>
+                  </>
+                }
+                value={tab.form.llm2_api_key}
+                onInput={(event) => tab.setForm('llm2_api_key', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('llmFallbackModel') as string}
+                value={tab.form.llm2_model}
+                onInput={(event) => tab.setForm('llm2_model', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('llmFallbackBackend') as string}
+                placeholder={t('llmBackendPlaceholder') as string}
+                value={tab.form.llm2_backend_type}
+                onInput={(event) => tab.setForm('llm2_backend_type', event.currentTarget.value)}
+              />
+              <TextInput
+                type="url"
+                label={t('llmFallbackBaseUrl') as string}
+                placeholder={t('llmBaseUrlPlaceholder') as string}
+                value={tab.form.llm2_base_url}
+                onInput={(event) => tab.setForm('llm2_base_url', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('llmFallbackAuthType') as string}
+                placeholder={t('llmAuthTypePlaceholder') as string}
+                value={tab.form.llm2_auth_type}
+                onInput={(event) => tab.setForm('llm2_auth_type', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('llmFallbackMaxTokensField') as string}
+                placeholder={t('llmMaxTokensFieldPlaceholder') as string}
+                value={tab.form.llm2_max_tokens_field}
+                onInput={(event) => tab.setForm('llm2_max_tokens_field', event.currentTarget.value)}
               />
             </div>
           </div>

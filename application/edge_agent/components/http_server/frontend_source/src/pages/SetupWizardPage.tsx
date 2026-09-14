@@ -54,6 +54,9 @@ type ProviderKey =
   | 'kimi_cn'
   | 'minimax_global'
   | 'minimax_cn'
+  | 'openrouter'
+  | 'nvidia'
+  | 'groq'
   | 'openai_compatible'
   | 'anthropic_compatible';
 type PlatformId = 'wechat' | 'feishu' | 'qq' | 'telegram';
@@ -192,6 +195,39 @@ const PROVIDER_PRESETS: Record<ProviderKey, ProviderPreset> = {
     llm_image_remote_url_only: 'false',
     llm_model: 'MiniMax-M3',
   },
+  openrouter: {
+    llm_backend_type: 'openai_compatible',
+    llm_base_url: 'https://openrouter.ai/api/v1',
+    llm_auth_type: 'bearer',
+    llm_default_image_max_bytes: '524288',
+    llm_max_tokens_field: 'max_tokens',
+    llm_supports_tools: 'true',
+    llm_supports_vision: 'false',
+    llm_image_remote_url_only: 'false',
+    llm_model: 'meta-llama/llama-3.3-70b-instruct:free',
+  },
+  nvidia: {
+    llm_backend_type: 'openai_compatible',
+    llm_base_url: 'https://integrate.api.nvidia.com/v1',
+    llm_auth_type: 'bearer',
+    llm_default_image_max_bytes: '524288',
+    llm_max_tokens_field: 'max_tokens',
+    llm_supports_tools: 'true',
+    llm_supports_vision: 'false',
+    llm_image_remote_url_only: 'false',
+    llm_model: 'nvidia/nemotron-3.5-lightning-30b-a3b',
+  },
+  groq: {
+    llm_backend_type: 'openai_compatible',
+    llm_base_url: 'https://api.groq.com/openai/v1',
+    llm_auth_type: 'bearer',
+    llm_default_image_max_bytes: '524288',
+    llm_max_tokens_field: 'max_tokens',
+    llm_supports_tools: 'true',
+    llm_supports_vision: 'false',
+    llm_image_remote_url_only: 'false',
+    llm_model: 'llama-3.3-70b-versatile',
+  },
   openai_compatible: {
     llm_backend_type: 'openai_compatible',
     llm_base_url: 'https://api.openai.com/v1',
@@ -225,6 +261,9 @@ const PRESET_BUTTONS: ProviderKey[] = [
   'kimi_cn',
   'minimax_global',
   'minimax_cn',
+  'openrouter',
+  'nvidia',
+  'groq',
   'openai_compatible',
   'anthropic_compatible',
 ];
@@ -293,6 +332,12 @@ function providerLabel(key: ProviderKey): string {
       return t('llmProviderMinimaxGlobal') as string;
     case 'minimax_cn':
       return t('llmProviderMinimaxCn') as string;
+    case 'openrouter':
+      return t('llmProviderOpenRouter') as string;
+    case 'nvidia':
+      return t('llmProviderNvidia') as string;
+    case 'groq':
+      return t('llmProviderGroq') as string;
     case 'openai_compatible':
       return t('llmProviderOpenaiCompatible') as string;
     case 'anthropic_compatible':

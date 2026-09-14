@@ -22,6 +22,12 @@ export type AppConfig = {
   llm_supports_tools: string;
   llm_supports_vision: string;
   llm_image_remote_url_only: string;
+  llm2_api_key: string;
+  llm2_backend_type: string;
+  llm2_model: string;
+  llm2_base_url: string;
+  llm2_auth_type: string;
+  llm2_max_tokens_field: string;
   qq_app_id: string;
   qq_app_secret: string;
   qq_msg_type: string;
@@ -102,6 +108,12 @@ export const GROUP_FIELDS: Record<ConfigGroup, (keyof AppConfig)[]> = {
     'llm_supports_tools',
     'llm_supports_vision',
     'llm_image_remote_url_only',
+    'llm2_api_key',
+    'llm2_backend_type',
+    'llm2_model',
+    'llm2_base_url',
+    'llm2_auth_type',
+    'llm2_max_tokens_field',
   ],
   im: [
     'qq_app_id',

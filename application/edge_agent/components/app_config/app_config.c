@@ -45,6 +45,12 @@ typedef struct {
 #define APP_DEFAULT_LLM_SUPPORTS_TOOLS       "false"
 #define APP_DEFAULT_LLM_SUPPORTS_VISION      "false"
 #define APP_DEFAULT_LLM_IMAGE_REMOTE_URL_ONLY "false"
+#define APP_DEFAULT_LLM2_API_KEY             ""
+#define APP_DEFAULT_LLM2_BACKEND_TYPE        ""
+#define APP_DEFAULT_LLM2_MODEL               ""
+#define APP_DEFAULT_LLM2_BASE_URL            ""
+#define APP_DEFAULT_LLM2_AUTH_TYPE           ""
+#define APP_DEFAULT_LLM2_MAX_TOKENS_FIELD    ""
 #define APP_DEFAULT_QQ_APP_ID                ""
 #define APP_DEFAULT_QQ_APP_SECRET            ""
 #define APP_DEFAULT_QQ_MSG_TYPE              "0"
@@ -112,6 +118,12 @@ static const app_config_field_t s_fields[] = {
     APP_CONFIG_FIELD(llm_supports_tools, "llm_sup_tools", APP_DEFAULT_LLM_SUPPORTS_TOOLS),
     APP_CONFIG_FIELD(llm_supports_vision, "llm_sup_vis", APP_DEFAULT_LLM_SUPPORTS_VISION),
     APP_CONFIG_FIELD(llm_image_remote_url_only, "llm_img_url_o", APP_DEFAULT_LLM_IMAGE_REMOTE_URL_ONLY),
+    APP_CONFIG_FIELD(llm2_api_key, "llm2_key", APP_DEFAULT_LLM2_API_KEY),
+    APP_CONFIG_FIELD(llm2_backend_type, "llm2_backend", APP_DEFAULT_LLM2_BACKEND_TYPE),
+    APP_CONFIG_FIELD(llm2_model, "llm2_model", APP_DEFAULT_LLM2_MODEL),
+    APP_CONFIG_FIELD(llm2_base_url, "llm2_url", APP_DEFAULT_LLM2_BASE_URL),
+    APP_CONFIG_FIELD(llm2_auth_type, "llm2_auth", APP_DEFAULT_LLM2_AUTH_TYPE),
+    APP_CONFIG_FIELD(llm2_max_tokens_field, "llm2_tokfield", APP_DEFAULT_LLM2_MAX_TOKENS_FIELD),
     APP_CONFIG_FIELD(qq_app_id, "qq_app_id", APP_DEFAULT_QQ_APP_ID),
     APP_CONFIG_FIELD(qq_app_secret, "qq_app_secret", APP_DEFAULT_QQ_APP_SECRET),
     APP_CONFIG_FIELD(qq_msg_type, "qq_msg_type", APP_DEFAULT_QQ_MSG_TYPE),
@@ -633,6 +645,12 @@ void app_config_to_claw(const app_config_t *config, app_claw_config_t *out)
     strlcpy(out->llm_image_remote_url_only,
             config->llm_image_remote_url_only,
             sizeof(out->llm_image_remote_url_only));
+    strlcpy(out->llm2_api_key, config->llm2_api_key, sizeof(out->llm2_api_key));
+    strlcpy(out->llm2_backend_type, config->llm2_backend_type, sizeof(out->llm2_backend_type));
+    strlcpy(out->llm2_model, config->llm2_model, sizeof(out->llm2_model));
+    strlcpy(out->llm2_base_url, config->llm2_base_url, sizeof(out->llm2_base_url));
+    strlcpy(out->llm2_auth_type, config->llm2_auth_type, sizeof(out->llm2_auth_type));
+    strlcpy(out->llm2_max_tokens_field, config->llm2_max_tokens_field, sizeof(out->llm2_max_tokens_field));
     strlcpy(out->qq_app_id, config->qq_app_id, sizeof(out->qq_app_id));
     strlcpy(out->qq_app_secret, config->qq_app_secret, sizeof(out->qq_app_secret));
     strlcpy(out->qq_msg_type, config->qq_msg_type, sizeof(out->qq_msg_type));

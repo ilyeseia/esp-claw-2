@@ -177,6 +177,28 @@ static esp_err_t claw_core_llm_ensure_runtime_locked(claw_core_handle_t core,
     return claw_core_llm_init(&core->llm_config, &core->llm_runtime, out_error_message);
 }
 
+bool claw_core_llm_fallback_config_ready(claw_core_state_t *core)
+{
+    if (!core) {
+        return false;
+    }
+    return core->llm_fallback_config.backend_type && core->llm_fallback_config.backend_type[0] &&
+           core->llm_fallback_config.base_url && core->llm_fallback_config.base_url[0] &&
+           core->llm_fallback_config.model && core->llm_fallback_config.model[0];
+}
+
+static esp_err_t claw_core_llm_ensure_fallback_runtime_locked(claw_core_handle_t core,
+                                                               char **out_error_message)
+{
+    if (!core || !out_error_message) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (core->llm_fallback_runtime) {
+        return ESP_OK;
+    }
+    return claw_core_llm_init(&core->llm_fallback_config, &core->llm_fallback_runtime, out_error_message);
+}
+
 esp_err_t claw_core_llm_chat_messages(claw_core_handle_t core,
                                       const char *system_prompt,
                                       cJSON *messages,
@@ -224,6 +246,24 @@ esp_err_t claw_core_llm_chat_messages(claw_core_handle_t core,
     if (err == ESP_OK) {
         err = claw_llm_runtime_chat(core->llm_runtime, &request, out_response, out_error_message);
     }
+    if (err != ESP_OK && claw_core_llm_fallback_config_ready(core)) {
+        ESP_LOGW(TAG, "chat_messages: primary backend failed (err=0x%x); trying fallback backend", err);
+        if (out_error_message && *out_error_message) {
+            free(*out_error_message);
+            *out_error_message = NULL;
+        }
+        esp_err_t fallback_err = claw_core_llm_ensure_fallback_runtime_locked(core, out_error_message);
+        if (fallback_err == ESP_OK) {
+            fallback_err = claw_llm_runtime_chat(core->llm_fallback_runtime, &request, out_response,
+                                                 out_error_message);
+        }
+        if (fallback_err == ESP_OK) {
+            ESP_LOGI(TAG, "chat_messages: fallback backend succeeded");
+        } else {
+            ESP_LOGE(TAG, "chat_messages: fallback backend also failed err=0x%x", fallback_err);
+        }
+        err = fallback_err;
+    }
     if (core->llm_lock) {
         xSemaphoreGive(core->llm_lock);
     }
@@ -256,6 +296,24 @@ esp_err_t claw_core_llm_infer_media(claw_core_handle_t core,
     err = claw_core_llm_ensure_runtime_locked(core, out_error_message);
     if (err == ESP_OK) {
         err = claw_llm_runtime_infer_media(core->llm_runtime, request, out_text, out_error_message);
+    }
+    if (err != ESP_OK && claw_core_llm_fallback_config_ready(core)) {
+        ESP_LOGW(TAG, "infer_media: primary backend failed (err=0x%x); trying fallback backend", err);
+        if (out_error_message && *out_error_message) {
+            free(*out_error_message);
+            *out_error_message = NULL;
+        }
+        esp_err_t fallback_err = claw_core_llm_ensure_fallback_runtime_locked(core, out_error_message);
+        if (fallback_err == ESP_OK) {
+            fallback_err = claw_llm_runtime_infer_media(core->llm_fallback_runtime, request, out_text,
+                                                        out_error_message);
+        }
+        if (fallback_err == ESP_OK) {
+            ESP_LOGI(TAG, "infer_media: fallback backend succeeded");
+        } else {
+            ESP_LOGE(TAG, "infer_media: fallback backend also failed err=0x%x", fallback_err);
+        }
+        err = fallback_err;
     }
     if (core->llm_lock) {
         xSemaphoreGive(core->llm_lock);

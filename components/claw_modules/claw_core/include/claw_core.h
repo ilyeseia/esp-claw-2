@@ -141,6 +141,18 @@ typedef struct {
     bool supports_tools;
     bool supports_vision;
     bool image_remote_url_only;
+    /* Optional fallback backend. When backend_type/base_url/model are all
+     * non-empty, a chat/media request that fails against the primary backend
+     * is retried once against this backend before the request is reported as
+     * failed. Numeric/behavior knobs (timeout, max_tokens, image size,
+     * supports_tools/vision, image_remote_url_only) are shared with the
+     * primary backend. Leave backend_type/base_url/model empty to disable. */
+    const char *fallback_api_key;
+    const char *fallback_backend_type;
+    const char *fallback_model;
+    const char *fallback_base_url;
+    const char *fallback_auth_type;
+    const char *fallback_max_tokens_field;
     const char *system_prompt;
     claw_core_persist_context_fn persist_context;
     void *persist_context_user_ctx;

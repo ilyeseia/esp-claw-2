@@ -616,6 +616,12 @@ static void app_claw_fill_core_config(const app_claw_config_t *config,
     core_config->supports_tools = app_claw_bool_is_true(config->llm_supports_tools);
     core_config->supports_vision = app_claw_bool_is_true(config->llm_supports_vision);
     core_config->image_remote_url_only = app_claw_bool_is_true(config->llm_image_remote_url_only);
+    core_config->fallback_api_key = config->llm2_api_key;
+    core_config->fallback_backend_type = config->llm2_backend_type;
+    core_config->fallback_model = config->llm2_model;
+    core_config->fallback_base_url = config->llm2_base_url;
+    core_config->fallback_auth_type = config->llm2_auth_type;
+    core_config->fallback_max_tokens_field = config->llm2_max_tokens_field;
     core_config->instance_id = 0;
     core_config->system_prompt = APP_SYSTEM_PROMPT;
 #if CONFIG_APP_CLAW_CAP_MEMORY

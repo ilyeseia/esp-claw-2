@@ -41,6 +41,8 @@ static void claw_core_free_runtime(claw_core_state_t *core)
     free(core->system_prompt);
     claw_core_llm_config_free(&core->llm_config);
     claw_llm_runtime_deinit(core->llm_runtime);
+    claw_core_llm_config_free(&core->llm_fallback_config);
+    claw_llm_runtime_deinit(core->llm_fallback_runtime);
     if (core->llm_lock) {
         vSemaphoreDelete(core->llm_lock);
     }
@@ -150,9 +152,30 @@ esp_err_t claw_core_create(const claw_core_config_t *config, claw_core_handle_t 
         return err;
     }
 
+    claw_core_llm_config_t llm_fallback_config = {0};
+    llm_fallback_config.api_key = config->fallback_api_key;
+    llm_fallback_config.backend_type = config->fallback_backend_type;
+    llm_fallback_config.model = config->fallback_model;
+    llm_fallback_config.base_url = config->fallback_base_url;
+    llm_fallback_config.auth_type = config->fallback_auth_type;
+    llm_fallback_config.max_tokens_field = config->fallback_max_tokens_field;
+    llm_fallback_config.timeout_ms = config->timeout_ms;
+    llm_fallback_config.max_tokens = config->max_tokens;
+    llm_fallback_config.image_max_bytes = config->image_max_bytes;
+    llm_fallback_config.supports_tools = config->supports_tools;
+    llm_fallback_config.supports_vision = config->supports_vision;
+    llm_fallback_config.image_remote_url_only = config->image_remote_url_only;
+    err = claw_core_llm_config_copy(&core->llm_fallback_config, &llm_fallback_config);
+    if (err != ESP_OK) {
+        claw_core_free_runtime(core);
+        return err;
+    }
+
     core->initialized = true;
     *out_core = core;
     ESP_LOGI(core->log_tag, "Initialized");
+    ESP_LOGI(core->log_tag, "LLM fallback backend: %s",
+             claw_core_llm_fallback_config_ready(core) ? core->llm_fallback_config.backend_type : "(none)");
     return ESP_OK;
 }
 
@@ -185,6 +208,26 @@ esp_err_t claw_core_update_llm_config(claw_core_handle_t core,
         return err;
     }
 
+    claw_core_llm_config_t next_fallback = {0};
+    claw_core_llm_config_t copied_fallback = {0};
+    next_fallback.api_key = config->fallback_api_key;
+    next_fallback.backend_type = config->fallback_backend_type;
+    next_fallback.model = config->fallback_model;
+    next_fallback.base_url = config->fallback_base_url;
+    next_fallback.auth_type = config->fallback_auth_type;
+    next_fallback.max_tokens_field = config->fallback_max_tokens_field;
+    next_fallback.timeout_ms = config->timeout_ms;
+    next_fallback.max_tokens = config->max_tokens;
+    next_fallback.image_max_bytes = config->image_max_bytes;
+    next_fallback.supports_tools = config->supports_tools;
+    next_fallback.supports_vision = config->supports_vision;
+    next_fallback.image_remote_url_only = config->image_remote_url_only;
+    err = claw_core_llm_config_copy(&copied_fallback, &next_fallback);
+    if (err != ESP_OK) {
+        claw_core_llm_config_free(&copied);
+        return err;
+    }
+
     if (core->llm_lock) {
         xSemaphoreTake(core->llm_lock, portMAX_DELAY);
     }
@@ -192,6 +235,10 @@ esp_err_t claw_core_update_llm_config(claw_core_handle_t core,
     core->llm_runtime = NULL;
     claw_core_llm_config_free(&core->llm_config);
     core->llm_config = copied;
+    claw_llm_runtime_deinit(core->llm_fallback_runtime);
+    core->llm_fallback_runtime = NULL;
+    claw_core_llm_config_free(&core->llm_fallback_config);
+    core->llm_fallback_config = copied_fallback;
     if (core->llm_lock) {
         xSemaphoreGive(core->llm_lock);
     }
@@ -206,6 +253,8 @@ esp_err_t claw_core_update_llm_config(claw_core_handle_t core,
              core->llm_config.model : "(empty)",
              core->llm_config.api_key && core->llm_config.api_key[0] ?
              "configured" : "missing");
+    ESP_LOGI(core->log_tag, "LLM fallback backend: %s",
+             claw_core_llm_fallback_config_ready(core) ? core->llm_fallback_config.backend_type : "(none)");
     return ESP_OK;
 }
 

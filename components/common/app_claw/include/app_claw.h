@@ -36,6 +36,16 @@ typedef struct {
     char llm_supports_tools[8];
     char llm_supports_vision[8];
     char llm_image_remote_url_only[8];
+    /* Optional fallback LLM backend: tried once when the primary backend
+     * fails (e.g. rate-limited or down). Empty backend_type/base_url/model
+     * disables it. Shares timeout/max_tokens/image/tool/vision knobs with
+     * the primary backend. */
+    char llm2_api_key[APP_CLAW_STR_LEN];
+    char llm2_backend_type[APP_CLAW_SHORT_STR_LEN];
+    char llm2_model[APP_CLAW_MODEL_LEN];
+    char llm2_base_url[APP_CLAW_STR_LEN];
+    char llm2_auth_type[APP_CLAW_SHORT_STR_LEN];
+    char llm2_max_tokens_field[APP_CLAW_SHORT_STR_LEN];
     char qq_app_id[APP_CLAW_SHORT_STR_LEN];
     char qq_app_secret[APP_CLAW_STR_LEN];
     char qq_msg_type[8];

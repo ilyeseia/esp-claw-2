@@ -96,6 +96,8 @@ struct claw_core_state {
     size_t context_provider_capacity;
     claw_core_llm_config_t llm_config;
     claw_llm_runtime_t *llm_runtime;
+    claw_core_llm_config_t llm_fallback_config;
+    claw_llm_runtime_t *llm_fallback_runtime;
     SemaphoreHandle_t llm_lock;
     uint32_t task_stack_size;
     UBaseType_t task_priority;
@@ -143,6 +145,9 @@ esp_err_t claw_core_llm_config_copy(claw_core_llm_config_t *dst,
 bool claw_core_llm_config_ready(claw_core_state_t *core,
                                 char *message,
                                 size_t message_size);
+/* True when a distinct fallback backend is configured (backend_type/base_url/
+ * model all non-empty). Must be called with core->llm_lock held. */
+bool claw_core_llm_fallback_config_ready(claw_core_state_t *core);
 
 void claw_core_free_request_item(claw_core_request_item_t *item);
 esp_err_t claw_core_ingress_submit(claw_core_state_t *core,

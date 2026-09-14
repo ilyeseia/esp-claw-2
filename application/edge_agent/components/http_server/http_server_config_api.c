@@ -54,6 +54,12 @@ static const config_field_def_t CONFIG_FIELDS[] = {
     CONFIG_FIELD("llm",          llm_supports_tools),
     CONFIG_FIELD("llm",          llm_supports_vision),
     CONFIG_FIELD("llm",          llm_image_remote_url_only),
+    CONFIG_FIELD("llm",          llm2_api_key),
+    CONFIG_FIELD("llm",          llm2_backend_type),
+    CONFIG_FIELD("llm",          llm2_model),
+    CONFIG_FIELD("llm",          llm2_base_url),
+    CONFIG_FIELD("llm",          llm2_auth_type),
+    CONFIG_FIELD("llm",          llm2_max_tokens_field),
 
     CONFIG_FIELD("im",           qq_app_id),
     CONFIG_FIELD("im",           qq_app_secret),

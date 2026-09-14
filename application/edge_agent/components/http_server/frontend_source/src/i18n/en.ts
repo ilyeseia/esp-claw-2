@@ -113,6 +113,9 @@ export const en = {
   llmProviderKimiCn: 'Kimi (CN)',
   llmProviderMinimaxGlobal: 'MiniMax (Global)',
   llmProviderMinimaxCn: 'MiniMax (CN)',
+  llmProviderOpenRouter: 'OpenRouter (free tier)',
+  llmProviderNvidia: 'NVIDIA NIM (free tier)',
+  llmProviderGroq: 'Groq (free tier)',
   llmProviderOpenaiCompatible: 'OpenAI Compatible API',
   llmProviderAnthropicCompatible: 'Anthropic Compatible API',
   llmProviderCustom: 'Custom',
@@ -142,6 +145,17 @@ export const en = {
   llmValidationRequiredFields: 'Complete required LLM fields before saving: {fields}.',
   llmValidationMaxTokens: 'Max Tokens must be a positive integer.',
   llmValidationImageMaxBytes: 'Default Image Max Bytes must be a positive integer.',
+
+  llmFallbackTitle: 'Fallback LLM (optional)',
+  llmFallbackHint:
+    'Tried once, automatically, when the primary backend fails (e.g. rate-limited or unreachable). Leave empty to disable. Shares timeout/max-tokens/vision settings with the primary backend.',
+  llmFallbackClear: 'Clear fallback',
+  llmFallbackApiKey: 'Fallback API Key',
+  llmFallbackModel: 'Fallback Model',
+  llmFallbackBackend: 'Fallback Backend',
+  llmFallbackBaseUrl: 'Fallback Base URL',
+  llmFallbackAuthType: 'Fallback Auth Type',
+  llmFallbackMaxTokensField: 'Fallback Max Tokens Field',
 
   sectionIm: 'Instant Messaging (IM)',
   imAdd: 'Add',

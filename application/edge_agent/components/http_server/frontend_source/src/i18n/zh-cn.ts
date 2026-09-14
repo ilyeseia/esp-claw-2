@@ -111,6 +111,9 @@ export const zhCn: Dict = {
   llmProviderKimiCn: 'Kimi (CN)',
   llmProviderMinimaxGlobal: 'MiniMax (Global)',
   llmProviderMinimaxCn: 'MiniMax (CN)',
+  llmProviderOpenRouter: 'OpenRouter（免费额度）',
+  llmProviderNvidia: 'NVIDIA NIM（免费额度）',
+  llmProviderGroq: 'Groq（免费额度）',
   llmProviderOpenaiCompatible: 'OpenAI 兼容 API',
   llmProviderAnthropicCompatible: 'Anthropic 兼容 API',
   llmProviderCustom: '自定义',
@@ -140,6 +143,17 @@ export const zhCn: Dict = {
   llmValidationRequiredFields: '保存前请补全 LLM 必填项：{fields}。',
   llmValidationMaxTokens: '最大 Token 数必须是正整数。',
   llmValidationImageMaxBytes: '默认图片大小上限必须是正整数。',
+
+  llmFallbackTitle: '备用 LLM（可选）',
+  llmFallbackHint:
+    '当主后端失败时（如触发限流或不可达）自动重试一次。留空则禁用。超时/最大 Token 数/视觉等设置与主后端共用。',
+  llmFallbackClear: '清除备用配置',
+  llmFallbackApiKey: '备用 API Key',
+  llmFallbackModel: '备用模型',
+  llmFallbackBackend: '备用后端',
+  llmFallbackBaseUrl: '备用 Base URL',
+  llmFallbackAuthType: '备用鉴权方式',
+  llmFallbackMaxTokensField: '备用 Max Tokens 字段名',
 
   sectionIm: '即时通讯 (IM)',
   imAdd: '添加',

@@ -153,6 +153,12 @@ static void main_copy_claw_to_app_config(const app_claw_config_t *src, app_confi
     strlcpy(dst->llm_image_remote_url_only,
             src->llm_image_remote_url_only,
             sizeof(dst->llm_image_remote_url_only));
+    strlcpy(dst->llm2_api_key, src->llm2_api_key, sizeof(dst->llm2_api_key));
+    strlcpy(dst->llm2_backend_type, src->llm2_backend_type, sizeof(dst->llm2_backend_type));
+    strlcpy(dst->llm2_model, src->llm2_model, sizeof(dst->llm2_model));
+    strlcpy(dst->llm2_base_url, src->llm2_base_url, sizeof(dst->llm2_base_url));
+    strlcpy(dst->llm2_auth_type, src->llm2_auth_type, sizeof(dst->llm2_auth_type));
+    strlcpy(dst->llm2_max_tokens_field, src->llm2_max_tokens_field, sizeof(dst->llm2_max_tokens_field));
 
     /* Persist every field the claw config carries (mirror of app_config_to_claw),
      * not just LLM — otherwise runtime changes routed through app_claw_apply_config
