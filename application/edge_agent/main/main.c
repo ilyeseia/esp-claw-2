@@ -153,6 +153,50 @@ static void main_copy_claw_to_app_config(const app_claw_config_t *src, app_confi
     strlcpy(dst->llm_image_remote_url_only,
             src->llm_image_remote_url_only,
             sizeof(dst->llm_image_remote_url_only));
+
+    /* Persist every field the claw config carries (mirror of app_config_to_claw),
+     * not just LLM — otherwise runtime changes routed through app_claw_apply_config
+     * (e.g. mqtt_configure / vpn_configure) are silently dropped on save. Wi-Fi/AP
+     * and timezone are not part of app_claw_config_t, so they keep the values just
+     * loaded from NVS. */
+    strlcpy(dst->qq_app_id, src->qq_app_id, sizeof(dst->qq_app_id));
+    strlcpy(dst->qq_app_secret, src->qq_app_secret, sizeof(dst->qq_app_secret));
+    strlcpy(dst->qq_msg_type, src->qq_msg_type, sizeof(dst->qq_msg_type));
+    strlcpy(dst->feishu_app_id, src->feishu_app_id, sizeof(dst->feishu_app_id));
+    strlcpy(dst->feishu_app_secret, src->feishu_app_secret, sizeof(dst->feishu_app_secret));
+    strlcpy(dst->tg_bot_token, src->tg_bot_token, sizeof(dst->tg_bot_token));
+    strlcpy(dst->wechat_token, src->wechat_token, sizeof(dst->wechat_token));
+    strlcpy(dst->wechat_base_url, src->wechat_base_url, sizeof(dst->wechat_base_url));
+    strlcpy(dst->wechat_cdn_base_url, src->wechat_cdn_base_url, sizeof(dst->wechat_cdn_base_url));
+    strlcpy(dst->wechat_account_id, src->wechat_account_id, sizeof(dst->wechat_account_id));
+    strlcpy(dst->search_brave_key, src->search_brave_key, sizeof(dst->search_brave_key));
+    strlcpy(dst->search_tavily_key, src->search_tavily_key, sizeof(dst->search_tavily_key));
+    strlcpy(dst->search_http_allowlist, src->search_http_allowlist, sizeof(dst->search_http_allowlist));
+    strlcpy(dst->search_searxng_url, src->search_searxng_url, sizeof(dst->search_searxng_url));
+    strlcpy(dst->search_provider, src->search_provider, sizeof(dst->search_provider));
+    strlcpy(dst->mqtt_enabled, src->mqtt_enabled, sizeof(dst->mqtt_enabled));
+    strlcpy(dst->mqtt_broker, src->mqtt_broker, sizeof(dst->mqtt_broker));
+    strlcpy(dst->mqtt_port, src->mqtt_port, sizeof(dst->mqtt_port));
+    strlcpy(dst->mqtt_tls_enabled, src->mqtt_tls_enabled, sizeof(dst->mqtt_tls_enabled));
+    strlcpy(dst->mqtt_username, src->mqtt_username, sizeof(dst->mqtt_username));
+    strlcpy(dst->mqtt_password, src->mqtt_password, sizeof(dst->mqtt_password));
+    strlcpy(dst->mqtt_client_id, src->mqtt_client_id, sizeof(dst->mqtt_client_id));
+    strlcpy(dst->mqtt_keepalive, src->mqtt_keepalive, sizeof(dst->mqtt_keepalive));
+    strlcpy(dst->mqtt_qos, src->mqtt_qos, sizeof(dst->mqtt_qos));
+    strlcpy(dst->mqtt_base_topic, src->mqtt_base_topic, sizeof(dst->mqtt_base_topic));
+    strlcpy(dst->vpn_enabled, src->vpn_enabled, sizeof(dst->vpn_enabled));
+    strlcpy(dst->vpn_gateway, src->vpn_gateway, sizeof(dst->vpn_gateway));
+    strlcpy(dst->vpn_test_host, src->vpn_test_host, sizeof(dst->vpn_test_host));
+    strlcpy(dst->vpn_test_port, src->vpn_test_port, sizeof(dst->vpn_test_port));
+    strlcpy(dst->net_use_static, src->net_use_static, sizeof(dst->net_use_static));
+    strlcpy(dst->net_ip, src->net_ip, sizeof(dst->net_ip));
+    strlcpy(dst->net_gateway, src->net_gateway, sizeof(dst->net_gateway));
+    strlcpy(dst->net_netmask, src->net_netmask, sizeof(dst->net_netmask));
+    strlcpy(dst->net_dns, src->net_dns, sizeof(dst->net_dns));
+    strlcpy(dst->net_dns2, src->net_dns2, sizeof(dst->net_dns2));
+    strlcpy(dst->enabled_cap_groups, src->enabled_cap_groups, sizeof(dst->enabled_cap_groups));
+    strlcpy(dst->llm_visible_cap_groups, src->llm_visible_cap_groups, sizeof(dst->llm_visible_cap_groups));
+    strlcpy(dst->enabled_lua_modules, src->enabled_lua_modules, sizeof(dst->enabled_lua_modules));
 }
 
 static esp_err_t main_save_claw_config(const app_claw_config_t *config, void *user_ctx)
