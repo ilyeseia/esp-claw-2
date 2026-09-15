@@ -108,11 +108,17 @@ static esp_err_t cap_ota_update_execute(const char *input_json,
         snprintf(output, output_size, "Error: invalid input JSON");
         return ESP_ERR_INVALID_ARG;
     }
+    /*
+     * SECURITY: https:// only. esp_https_ota() has no independent firmware
+     * signature verification here (no secure-boot image signing configured),
+     * so TLS (via esp_crt_bundle_attach in cap_ota_task) is the only integrity/
+     * authenticity check we get. A plain http:// URL would let anyone who can
+     * intercept or spoof that path push arbitrary unsigned firmware.
+     */
     const char *url = cap_ota_json_str(input, "url");
-    if (!url || !url[0] ||
-            (strncmp(url, "http://", 7) != 0 && strncmp(url, "https://", 8) != 0)) {
+    if (!url || !url[0] || strncmp(url, "https://", 8) != 0) {
         cJSON_Delete(input);
-        snprintf(output, output_size, "Error: 'url' must be an http:// or https:// firmware URL");
+        snprintf(output, output_size, "Error: 'url' must be an https:// firmware URL (plain http:// is rejected)");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -205,15 +211,16 @@ static const claw_cap_descriptor_t s_ota_descriptors[] = {
         .id = "ota_update",
         .name = "ota_update",
         .family = "system",
-        .description = "Download a firmware image from an http(s) URL (e.g. on your tailnet) into the "
-                       "inactive OTA slot and reboot into it. Restricted, root-agent only — replaces the "
-                       "running firmware.",
+        .description = "Download a firmware image from an https:// URL (e.g. on your tailnet) into the "
+                       "inactive OTA slot and reboot into it. Plain http:// is rejected — TLS is the only "
+                       "integrity/authenticity check since images are not otherwise signed. Restricted, "
+                       "root-agent only — replaces the running firmware.",
         .kind = CLAW_CAP_KIND_CALLABLE,
         .cap_flags = CLAW_CAP_FLAG_CALLABLE_BY_LLM | CLAW_CAP_FLAG_RESTRICTED |
                      CLAW_CAP_FLAG_ROOT_AGENT_ONLY,
         .input_schema_json =
         "{\"type\":\"object\",\"properties\":{"
-        "\"url\":{\"type\":\"string\",\"description\":\"http(s) URL of the firmware .bin\"}},"
+        "\"url\":{\"type\":\"string\",\"description\":\"https:// URL of the firmware .bin (http:// rejected)\"}},"
         "\"required\":[\"url\"]}",
         .execute = cap_ota_update_execute,
     },

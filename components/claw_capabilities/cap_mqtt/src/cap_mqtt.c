@@ -138,8 +138,24 @@ static void cap_mqtt_run_capability(const char *chat_id, const char *cap_name, c
         return;
     }
 
+    /*
+     * SECURITY: caller must be an agent-class caller (SUB_AGENT, the least
+     * trusted one) so claw_cap_call() runs the full LLM-tool authorization
+     * check (claw_cap_caller_is_agent() -> claw_cap_authorize_llm_tool_locked()).
+     * The capability name and input here come straight from an inbound MQTT
+     * message — untrusted network input. CLAW_CAP_CALLER_SYSTEM skips that
+     * check entirely (it's meant for trusted local callers such as router
+     * rules and Lua scripts configured by the device owner), which would let
+     * anyone able to publish to the command topic invoke ANY registered
+     * capability — including CLAW_CAP_FLAG_RESTRICTED / ROOT_AGENT_ONLY tools
+     * like ota_update, mqtt_configure, vpn_configure, wireguard_configure —
+     * with no LLM involvement and no root-agent restriction. Using SUB_AGENT
+     * makes CALLABLE_BY_LLM + ROOT_AGENT_ONLY enforced exactly as they are for
+     * an untrusted sub-agent; plain CALLABLE_BY_LLM tools (e.g. get_current_time,
+     * mqtt_status) still work, restricted/root-only tools are correctly denied.
+     */
     claw_cap_call_context_t ctx = {
-        .caller = CLAW_CAP_CALLER_SYSTEM,
+        .caller = CLAW_CAP_CALLER_SUB_AGENT,
         .channel = CAP_MQTT_CHANNEL,
         .chat_id = chat_id,
         .source_cap = CAP_MQTT_SOURCE,
