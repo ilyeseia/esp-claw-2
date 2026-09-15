@@ -352,20 +352,38 @@ static esp_err_t cap_web_search_searxng_direct(const char *query, cap_web_search
 {
     char encoded_query[256];
     char url[512];
+    const char *base = s_search.searxng_url;
     size_t base_len;
     int written;
 
     cap_web_search_url_encode(query, encoded_query, sizeof(encoded_query));
 
+    /*
+     * Always request https:// regardless of the scheme the user configured
+     * (or omitted). A plain http:// request to a Tailscale-Funnel-fronted (or
+     * similarly reverse-proxied) SearXNG instance gets 302-redirected to
+     * https by the proxy, but esp_http_client does not reliably follow a
+     * redirect that changes scheme (http -> https) mid-request: it ends up
+     * returning the redirect page's own HTML body with a 200 status instead
+     * of following it, which then fails JSON parsing. Requesting https
+     * directly avoids the redirect hop entirely and is strictly no less
+     * secure than what the user asked for.
+     */
+    if (strncmp(base, "https://", 8) == 0) {
+        base += 8;
+    } else if (strncmp(base, "http://", 7) == 0) {
+        base += 7;
+    }
+
     /* Trim trailing slashes from the configured base URL so we build a clean
      * "<base>/search?..." regardless of how the user entered it. */
-    base_len = strlen(s_search.searxng_url);
-    while (base_len > 0 && s_search.searxng_url[base_len - 1] == '/') {
+    base_len = strlen(base);
+    while (base_len > 0 && base[base_len - 1] == '/') {
         base_len--;
     }
 
-    written = snprintf(url, sizeof(url), "%.*s/search?q=%s&format=json",
-                       (int)base_len, s_search.searxng_url, encoded_query);
+    written = snprintf(url, sizeof(url), "https://%.*s/search?q=%s&format=json",
+                       (int)base_len, base, encoded_query);
     if (written < 0 || (size_t)written >= sizeof(url)) {
         return ESP_ERR_INVALID_SIZE;
     }
@@ -376,7 +394,7 @@ static esp_err_t cap_web_search_searxng_direct(const char *query, cap_web_search
         .user_data = buf,
         .timeout_ms = 15000,
         .buffer_size = 4096,
-        /* Harmless for http:// endpoints; required if the user points at https://. */
+        /* Always https:// now (see above), so TLS cert validation is required. */
         .crt_bundle_attach = esp_crt_bundle_attach,
 #ifdef CONFIG_HTTP_REUSE_ENABLE
         .keep_alive_enable = true,
@@ -476,11 +494,20 @@ static esp_err_t cap_web_search_execute(const char *input_json,
     }
 
     root = cJSON_Parse(buf.data);
-    free(buf.data);
     if (!root) {
+        /* Diagnostic only: log length + a safe prefix of what was actually
+         * received, so a parse failure (e.g. an HTML block/challenge page
+         * returned with HTTP 200 by a reverse proxy, unexpected
+         * transfer-encoding, etc.) can be told apart from a real SearXNG/
+         * Tavily/Brave outage without needing physical access to the device. */
+        ESP_LOGE(TAG, "Parse failed (provider=%d, len=%u): %.*s",
+                 (int)s_search.provider, (unsigned)buf.len,
+                 (int)(buf.len < 200 ? buf.len : 200), buf.data);
+        free(buf.data);
         snprintf(output, output_size, "Error: failed to parse search results");
         return ESP_FAIL;
     }
+    free(buf.data);
 
     if (s_search.provider == CAP_WEB_SEARCH_PROVIDER_SEARXNG ||
             s_search.provider == CAP_WEB_SEARCH_PROVIDER_TAVILY) {
