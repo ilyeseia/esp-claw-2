@@ -114,6 +114,11 @@ dependencies:
       - if: $CONFIG{APP_CLAW_CAP_NETCFG} == True
     path: ../../claw_capabilities/cap_netcfg
 
+  cap_ota:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_OTA} == True
+    path: ../../claw_capabilities/cap_ota
+
   claw_cap:
     path: ../../claw_modules/claw_cap
 

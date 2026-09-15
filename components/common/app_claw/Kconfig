@@ -207,6 +207,15 @@ menu "App Claw Config"
                 for reading and setting a static STA IP / gateway / DNS. Changes are
                 persisted and applied on the next reboot.
 
+        config APP_CLAW_CAP_OTA
+            bool "Enable OTA update capability"
+            default y
+            help
+                Enable the cap_ota capability (ota_status/ota_update) for remote
+                firmware updates over the network (e.g. Tailscale). ota_update
+                downloads a firmware image into the inactive OTA slot and reboots.
+                Requires a dual-OTA partition table (e.g. partitions_16MB.csv).
+
         config APP_CLAW_CAP_ROUTER_MGR
             bool "Enable router manager capability"
             select APP_CLAW_CAP_EVENT_ROUTER
