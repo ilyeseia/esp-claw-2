@@ -77,6 +77,9 @@
 #if CONFIG_APP_CLAW_CAP_OTA
 #include "cap_ota.h"
 #endif
+#if CONFIG_APP_CLAW_CAP_PLATFORM
+#include "cap_platform.h"
+#endif
 #include "claw_cap.h"
 #if CONFIG_APP_CLAW_CAP_MEMORY
 #include "claw_memory.h"
@@ -958,6 +961,16 @@ static esp_err_t app_cap_register_ota(const app_claw_config_t *config,
 }
 #endif
 
+#if CONFIG_APP_CLAW_CAP_PLATFORM
+static esp_err_t app_cap_register_platform(const app_claw_config_t *config,
+                                           const app_claw_storage_paths_t *paths)
+{
+    (void)config;
+    (void)paths;
+    return cap_platform_register_group();
+}
+#endif
+
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
 static esp_err_t app_cap_register_router_mgr(const app_claw_config_t *config,
                                              const app_claw_storage_paths_t *paths)
@@ -1049,6 +1062,9 @@ static const app_capability_group_entry_t s_capability_group_entries[] = {
 #if CONFIG_APP_CLAW_CAP_OTA
     { "cap_ota", "OTA", "Register OTA cap", true, NULL, app_cap_register_ota },
 #endif
+#if CONFIG_APP_CLAW_CAP_PLATFORM
+    { "cap_platform", "Platform", "Register platform authenticated-trigger cap", false, NULL, app_cap_register_platform },
+#endif
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
     { "cap_router_mgr", "Router Manager", "Register router manager cap", true, NULL, app_cap_register_router_mgr },
 #endif
@@ -1117,6 +1133,9 @@ static const app_capability_group_info_t s_capability_group_infos[] = {
 #endif
 #if CONFIG_APP_CLAW_CAP_OTA
     { "cap_ota", "OTA", true },
+#endif
+#if CONFIG_APP_CLAW_CAP_PLATFORM
+    { "cap_platform", "Platform", false },
 #endif
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
     { "cap_router_mgr", "Router Manager", false },

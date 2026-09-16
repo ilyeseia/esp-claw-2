@@ -216,6 +216,20 @@ menu "App Claw Config"
                 downloads a firmware image into the inactive OTA slot and reboots.
                 Requires a dual-OTA partition table (e.g. partitions_16MB.csv).
 
+        config APP_CLAW_CAP_PLATFORM
+            bool "Enable platform authenticated-trigger capability (cap_platform)"
+            default n
+            help
+                Enable the cap_platform capability (platform_configure/platform_exec):
+                an HMAC-signed, time-limited command token that lets a trusted
+                management platform deterministically trigger a RESTRICTED/
+                ROOT_AGENT_ONLY capability (e.g. ota_update, mqtt_configure) over
+                the MQTT command bridge, where such capabilities are normally
+                unreachable. The shared secret must be set locally via
+                platform_configure (never over MQTT) before platform_exec will
+                accept any token. Default n: new, security-sensitive, opt-in
+                until proven on real hardware.
+
         config APP_CLAW_CAP_ROUTER_MGR
             bool "Enable router manager capability"
             select APP_CLAW_CAP_EVENT_ROUTER

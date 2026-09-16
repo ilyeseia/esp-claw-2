@@ -1,0 +1,12 @@
+idf_component_register(
+    SRCS
+        "src/cap_platform.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        claw_cap
+        json
+        nvs_flash
+        mbedtls
+        esp_hw_support
+)
