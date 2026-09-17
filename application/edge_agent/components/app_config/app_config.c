@@ -101,6 +101,9 @@ typedef struct {
 #define APP_DEFAULT_MCP_ENDPOINT             "mcp"
 #define APP_DEFAULT_MCP_SERVER_PORT          "18791"
 #define APP_DEFAULT_MCP_CTRL_PORT            "18792"
+#define APP_DEFAULT_SSH_ENABLED              "false"
+#define APP_DEFAULT_SSH_HOST_PRIVATE_KEY_DER_B64 ""
+#define APP_DEFAULT_SSH_AUTHORIZED_PUBLIC_KEY ""
 #define APP_DEFAULT_ENABLED_CAP_GROUPS       ""
 #define APP_DEFAULT_LLM_VISIBLE_CAP_GROUPS   ""
 #define APP_DEFAULT_ENABLED_LUA_MODULES      ""
@@ -181,6 +184,9 @@ static const app_config_field_t s_fields[] = {
     APP_CONFIG_FIELD(mcp_endpoint, "mcp_ep", APP_DEFAULT_MCP_ENDPOINT),
     APP_CONFIG_FIELD(mcp_server_port, "mcp_port", APP_DEFAULT_MCP_SERVER_PORT),
     APP_CONFIG_FIELD(mcp_ctrl_port, "mcp_ctrl_port", APP_DEFAULT_MCP_CTRL_PORT),
+    APP_CONFIG_FIELD(ssh_enabled, "ssh_en", APP_DEFAULT_SSH_ENABLED),
+    APP_CONFIG_FIELD(ssh_host_private_key_der_b64, "ssh_hostkey", APP_DEFAULT_SSH_HOST_PRIVATE_KEY_DER_B64),
+    APP_CONFIG_FIELD(ssh_authorized_public_key, "ssh_authkey", APP_DEFAULT_SSH_AUTHORIZED_PUBLIC_KEY),
     APP_CONFIG_FIELD(enabled_cap_groups, "en_cap_groups", APP_DEFAULT_ENABLED_CAP_GROUPS),
     APP_CONFIG_FIELD(llm_visible_cap_groups, "vis_cap_groups", APP_DEFAULT_LLM_VISIBLE_CAP_GROUPS),
     APP_CONFIG_FIELD(enabled_lua_modules, "en_lua_mods", APP_DEFAULT_ENABLED_LUA_MODULES),
@@ -704,6 +710,11 @@ void app_config_to_claw(const app_config_t *config, app_claw_config_t *out)
     strlcpy(out->wg_keepalive, config->wg_keepalive, sizeof(out->wg_keepalive));
     strlcpy(out->wg_preshared_key, config->wg_preshared_key, sizeof(out->wg_preshared_key));
     strlcpy(out->wg_make_default, config->wg_make_default, sizeof(out->wg_make_default));
+    strlcpy(out->ssh_enabled, config->ssh_enabled, sizeof(out->ssh_enabled));
+    strlcpy(out->ssh_host_private_key_der_b64, config->ssh_host_private_key_der_b64,
+            sizeof(out->ssh_host_private_key_der_b64));
+    strlcpy(out->ssh_authorized_public_key, config->ssh_authorized_public_key,
+            sizeof(out->ssh_authorized_public_key));
     strlcpy(out->net_use_static, config->net_use_static, sizeof(out->net_use_static));
     strlcpy(out->net_ip, config->net_ip, sizeof(out->net_ip));
     strlcpy(out->net_gateway, config->net_gateway, sizeof(out->net_gateway));

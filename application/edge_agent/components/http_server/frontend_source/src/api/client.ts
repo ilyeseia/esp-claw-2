@@ -79,6 +79,9 @@ export type AppConfig = {
   mcp_endpoint: string;
   mcp_server_port: string;
   mcp_ctrl_port: string;
+  ssh_enabled: string;
+  ssh_host_private_key_der_b64: string;
+  ssh_authorized_public_key: string;
   enabled_cap_groups: string;
   llm_visible_cap_groups: string;
   enabled_lua_modules: string;
@@ -96,6 +99,7 @@ export type ConfigGroup =
   | 'vpn'
   | 'network'
   | 'mcp'
+  | 'ssh'
   | 'capabilities'
   | 'skills'
   | 'time';
@@ -178,6 +182,7 @@ export const GROUP_FIELDS: Record<ConfigGroup, (keyof AppConfig)[]> = {
     'mcp_server_port',
     'mcp_ctrl_port',
   ],
+  ssh: ['ssh_enabled', 'ssh_host_private_key_der_b64', 'ssh_authorized_public_key'],
   capabilities: ['enabled_cap_groups', 'llm_visible_cap_groups'],
   skills: ['enabled_lua_modules'],
   time: ['time_timezone'],

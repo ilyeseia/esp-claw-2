@@ -31,6 +31,7 @@ const NetworkPage = lazy(() =>
   import('./pages/NetworkPage').then((mod) => ({ default: mod.NetworkPage })),
 );
 const McpPage = lazy(() => import('./pages/McpPage').then((mod) => ({ default: mod.McpPage })));
+const SshPage = lazy(() => import('./pages/SshPage').then((mod) => ({ default: mod.SshPage })));
 const MemoryPage = lazy(() =>
   import('./pages/MemoryPage').then((mod) => ({ default: mod.MemoryPage })),
 );
@@ -281,6 +282,11 @@ const App: Component = () => {
               </Show>
               <Show when={currentTab() === 'mcp'}>
                 <McpPage
+                  onRestartRequest={() => void handleRestartRequest({ reloadOnSuccess: true })}
+                />
+              </Show>
+              <Show when={currentTab() === 'ssh'}>
+                <SshPage
                   onRestartRequest={() => void handleRestartRequest({ reloadOnSuccess: true })}
                 />
               </Show>

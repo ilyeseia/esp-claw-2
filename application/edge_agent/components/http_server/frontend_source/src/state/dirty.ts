@@ -11,6 +11,7 @@ export type TabId =
   | 'vpn'
   | 'network'
   | 'mcp'
+  | 'ssh'
   | 'memory'
   | 'webim'
   | 'capabilities'
@@ -27,6 +28,7 @@ const [dirtyTabs, setDirtyTabs] = createSignal<Record<TabId, boolean>>({
   vpn: false,
   network: false,
   mcp: false,
+  ssh: false,
   memory: false,
   webim: false,
   capabilities: false,

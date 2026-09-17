@@ -104,6 +104,15 @@ typedef struct {
     char mcp_endpoint[64];                  /* HTTP path, e.g. "mcp" */
     char mcp_server_port[16];
     char mcp_ctrl_port[16];                 /* esp_http_server control port */
+    /* cap_ssh (network-reachable SSH console). Client keys: RSA/ECDSA only,
+     * ed25519 is rejected by this wolfSSH build (see cap_ssh.h). Reboot
+     * required to apply a changed key on an already-running server. */
+    char ssh_enabled[8];                    /* "true" / "false" */
+    char ssh_host_private_key_der_b64[3800]; /* base64-encoded DER, secret — see
+                                              * cap_ssh.c's CAP_SSH_HOSTKEY_B64_MAX
+                                              * for why this stays under NVS's
+                                              * 4000-byte string limit */
+    char ssh_authorized_public_key[1024];   /* OpenSSH public key line */
     char enabled_cap_groups[APP_CONFIG_STR_LEN];
     char llm_visible_cap_groups[APP_CONFIG_STR_LEN];
     char enabled_lua_modules[APP_CONFIG_STR_LEN];

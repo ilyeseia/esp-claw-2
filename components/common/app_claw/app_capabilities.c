@@ -975,6 +975,60 @@ static esp_err_t app_cap_register_platform(const app_claw_config_t *config,
 #endif
 
 #if CONFIG_APP_CLAW_CAP_SSH
+/* Persist hook for ssh_configure: fold the applied SSH settings back into
+ * the full app config and save them so they survive a reboot. Mirrors
+ * app_cap_vpn_persist(). */
+static esp_err_t app_cap_ssh_persist(const cap_ssh_config_t *config, void *user_ctx)
+{
+    (void)user_ctx;
+    if (!config) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    app_claw_config_t *app = calloc(1, sizeof(*app));
+    if (!app) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    esp_err_t err = app_claw_get_config(app);
+    if (err != ESP_OK) {
+        free(app);
+        return err;
+    }
+
+    strlcpy(app->ssh_enabled, config->enabled ? "true" : "false", sizeof(app->ssh_enabled));
+    strlcpy(app->ssh_host_private_key_der_b64,
+            config->host_private_key_der_b64 ? config->host_private_key_der_b64 : "",
+            sizeof(app->ssh_host_private_key_der_b64));
+    strlcpy(app->ssh_authorized_public_key,
+            config->authorized_public_key ? config->authorized_public_key : "",
+            sizeof(app->ssh_authorized_public_key));
+
+    err = app_claw_apply_config(app);
+    free(app);
+    return err;
+}
+
+static esp_err_t app_cap_prepare_ssh(const app_claw_config_t *config,
+                                     const app_claw_storage_paths_t *paths)
+{
+    (void)paths;
+
+    bool enabled = config->ssh_enabled[0] &&
+                   (strcmp(config->ssh_enabled, "true") == 0 || strcmp(config->ssh_enabled, "1") == 0);
+    cap_ssh_config_t cfg = {
+        .enabled = enabled,
+        .host_private_key_der_b64 = config->ssh_host_private_key_der_b64,
+        .authorized_public_key = config->ssh_authorized_public_key,
+    };
+
+    esp_err_t err = cap_ssh_set_config(&cfg);
+    if (err != ESP_OK) {
+        return err;
+    }
+    return cap_ssh_set_persist_provider(app_cap_ssh_persist, NULL);
+}
+
 static esp_err_t app_cap_register_ssh(const app_claw_config_t *config,
                                       const app_claw_storage_paths_t *paths)
 {
@@ -1079,7 +1133,7 @@ static const app_capability_group_entry_t s_capability_group_entries[] = {
     { "cap_platform", "Platform", "Register platform authenticated-trigger cap", false, NULL, app_cap_register_platform },
 #endif
 #if CONFIG_APP_CLAW_CAP_SSH
-    { "cap_ssh", "SSH", "Register SSH capability", false, NULL, app_cap_register_ssh },
+    { "cap_ssh", "SSH", "Register SSH capability", false, app_cap_prepare_ssh, app_cap_register_ssh },
 #endif
 #if CONFIG_APP_CLAW_CAP_ROUTER_MGR
     { "cap_router_mgr", "Router Manager", "Register router manager cap", true, NULL, app_cap_register_router_mgr },

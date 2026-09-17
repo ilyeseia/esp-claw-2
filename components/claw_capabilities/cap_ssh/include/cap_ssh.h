@@ -5,6 +5,8 @@
  */
 #pragma once
 
+#include <stdbool.h>
+
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -59,7 +61,37 @@ extern "C" {
  * user_settings.h (e.g. the same idf_component_get_property +
  * target_compile_definitions pattern used transiently for DEBUG_WOLFSSH
  * while diagnosing this) — not done here since RSA/ECDSA already cover it.
+ *
+ * Configuration flows through app_config/the web UI, the same way as
+ * cap_vpn's WireGuard settings: cap_ssh holds no NVS namespace of its own.
+ * cap_ssh_set_config() is called once at boot (from app_capabilities' SSH
+ * "prepare" hook, with whatever is in app_config_t) and again whenever the
+ * ssh_configure tool runs; a persist provider (cap_ssh_set_persist_provider)
+ * lets the app fold applied settings back into its own config store so they
+ * survive a reboot — ssh_configure itself never touches storage directly.
  */
+typedef struct {
+    /* Start the SSH server once configured. False just retains the stored
+     * key material without listening (mirrors vpn_enabled). */
+    bool enabled;
+    /* Base64-encoded DER SSH host private key (RSA or ECDSA). */
+    const char *host_private_key_der_b64;
+    /* One authorized client public key, standard OpenSSH line (RSA/ECDSA). */
+    const char *authorized_public_key;
+} cap_ssh_config_t;
+
+/* Apply configuration. Safe to call again to update settings; a key change
+ * only takes effect for a server not yet started (v1: reboot to rotate keys
+ * on an already-running server, same limitation as before this existed). */
+esp_err_t cap_ssh_set_config(const cap_ssh_config_t *config);
+
+/*
+ * Optional persistence hook. When set, the (root-agent-only) ssh_configure
+ * tool writes the applied settings through this callback so they survive a
+ * reboot. The app wires this to its NVS-backed config store.
+ */
+typedef esp_err_t (*cap_ssh_persist_fn)(const cap_ssh_config_t *config, void *user_ctx);
+esp_err_t cap_ssh_set_persist_provider(cap_ssh_persist_fn persist, void *user_ctx);
 
 /* Registers the cap_ssh group (ssh_configure, ssh_status). */
 esp_err_t cap_ssh_register_group(void);

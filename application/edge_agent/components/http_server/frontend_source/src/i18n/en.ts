@@ -24,6 +24,7 @@ export const en = {
   navVpn: 'VPN',
   navNetwork: 'Network',
   navMcp: 'MCP Server',
+  navSsh: 'SSH',
   navMemory: 'Memory',
   navCapabilities: 'Capabilities',
   navLuaModules: 'Lua Modules',
@@ -282,6 +283,18 @@ export const en = {
   mcpCtrlPortHint: 'Internal esp_http_server control port; must differ from the server port.',
   mcpNote:
     'Exposes two tools to any MCP client: claw_list (discover capabilities) and claw_call (invoke one by name). Calls run with the same restricted, sub-agent-level trust as MQTT commands — root-only tools stay blocked. This server has no login of its own, so only expose it on a trusted network. Changing any field needs a restart to apply.',
+
+  sectionSsh: 'SSH Console',
+  sshEnabled: 'Enable SSH server',
+  sshEnabledHint: 'Public-key authentication only — no passwords. Takes effect after a restart.',
+  sshHostPrivateKey: 'Host private key (base64 DER)',
+  sshHostPrivateKeyHint:
+    'Generate with e.g. ssh-keygen -m PEM -t ecdsa -f hostkey, then: openssl ec -in hostkey -outform DER | base64 -w0',
+  sshAuthorizedKey: 'Authorized client public key',
+  sshAuthorizedKeyHint: 'One standard OpenSSH public key line (RSA or ECDSA only — ed25519 is rejected by this build).',
+  sshAuthorizedKeyPlaceholder: 'ecdsa-sha2-nistp256 AAAA... user@host',
+  sshNote:
+    'A small purpose-built shell (help/list/groups/call <name> <json>), not the full device console — this is the same trust level as physical serial access, gated behind a real SSH handshake. Rotating an already-running server\'s keys needs a restart. Never returns keys back to you once saved.',
 
   sectionNetworkIp: 'Static IP (Wi-Fi)',
   netUseStatic: 'Use a static IP',

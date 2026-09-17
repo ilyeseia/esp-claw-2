@@ -12,6 +12,7 @@ import {
   Settings,
   ShieldCheck,
   SquareFunction,
+  Terminal,
   Waypoints,
   WifiPen,
 } from 'lucide-solid';
@@ -32,6 +33,7 @@ const IconMqtt: Component = () => <Radio class={iconClass} />;
 const IconVpn: Component = () => <ShieldCheck class={iconClass} />;
 const IconNet: Component = () => <Network class={iconClass} />;
 const IconMcp: Component = () => <Waypoints class={iconClass} />;
+const IconSsh: Component = () => <Terminal class={iconClass} />;
 const IconMemory: Component = () => <DatabaseZap class={iconClass} />;
 const IconCaps: Component = () => <Blocks class={iconClass} />;
 const IconSkills: Component = () => <SquareFunction class={iconClass} />;
@@ -51,6 +53,7 @@ export type LeafNode = {
     | 'navVpn'
     | 'navNetwork'
     | 'navMcp'
+    | 'navSsh'
     | 'navMemory'
     | 'navCapabilities'
     | 'navLuaModules'
@@ -83,6 +86,7 @@ export const NAV_TREE: NavNode[] = [
       { kind: 'leaf', id: 'vpn', labelKey: 'navVpn', icon: IconVpn },
       { kind: 'leaf', id: 'network', labelKey: 'navNetwork', icon: IconNet },
       { kind: 'leaf', id: 'mcp', labelKey: 'navMcp', icon: IconMcp },
+      { kind: 'leaf', id: 'ssh', labelKey: 'navSsh', icon: IconSsh },
     ],
   },
   { kind: 'leaf', id: 'memory', labelKey: 'navMemory', icon: IconMemory },

@@ -209,6 +209,11 @@ static void main_copy_claw_to_app_config(const app_claw_config_t *src, app_confi
     strlcpy(dst->wg_keepalive, src->wg_keepalive, sizeof(dst->wg_keepalive));
     strlcpy(dst->wg_preshared_key, src->wg_preshared_key, sizeof(dst->wg_preshared_key));
     strlcpy(dst->wg_make_default, src->wg_make_default, sizeof(dst->wg_make_default));
+    strlcpy(dst->ssh_enabled, src->ssh_enabled, sizeof(dst->ssh_enabled));
+    strlcpy(dst->ssh_host_private_key_der_b64, src->ssh_host_private_key_der_b64,
+            sizeof(dst->ssh_host_private_key_der_b64));
+    strlcpy(dst->ssh_authorized_public_key, src->ssh_authorized_public_key,
+            sizeof(dst->ssh_authorized_public_key));
     strlcpy(dst->net_use_static, src->net_use_static, sizeof(dst->net_use_static));
     strlcpy(dst->net_ip, src->net_ip, sizeof(dst->net_ip));
     strlcpy(dst->net_gateway, src->net_gateway, sizeof(dst->net_gateway));

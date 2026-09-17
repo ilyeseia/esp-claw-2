@@ -118,6 +118,10 @@ static const config_field_def_t CONFIG_FIELDS[] = {
     CONFIG_FIELD("mcp",          mcp_server_port),
     CONFIG_FIELD("mcp",          mcp_ctrl_port),
 
+    CONFIG_FIELD("ssh",          ssh_enabled),
+    CONFIG_FIELD("ssh",          ssh_host_private_key_der_b64),
+    CONFIG_FIELD("ssh",          ssh_authorized_public_key),
+
     CONFIG_FIELD("capabilities", enabled_cap_groups),
     CONFIG_FIELD("capabilities", llm_visible_cap_groups),
 

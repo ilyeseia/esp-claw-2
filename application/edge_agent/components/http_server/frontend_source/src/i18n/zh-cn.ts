@@ -26,6 +26,7 @@ export const zhCn: Dict = {
   navVpn: 'VPN',
   navNetwork: '网络',
   navMcp: 'MCP 服务器',
+  navSsh: 'SSH',
   navMemory: '记忆管理',
   navCapabilities: 'Capabilities 管理',
   navLuaModules: 'Lua 模块管理',
@@ -274,6 +275,18 @@ export const zhCn: Dict = {
   mcpCtrlPortHint: 'esp_http_server 内部控制端口，必须与服务端口不同。',
   mcpNote:
     '向任意 MCP 客户端暴露两个工具：claw_list（发现能力列表）和 claw_call（按名称调用）。调用时的信任级别与 MQTT 命令一致（受限的子智能体级别）——仅限根智能体的工具仍会被拒绝。该服务器本身没有登录验证，请仅在受信任的网络中开放。修改任意字段都需要重启才能生效。',
+
+  sectionSsh: 'SSH 控制台',
+  sshEnabled: '启用 SSH 服务器',
+  sshEnabledHint: '仅支持公钥认证，不支持密码。需要重启才能生效。',
+  sshHostPrivateKey: '主机私钥（base64 编码的 DER）',
+  sshHostPrivateKeyHint:
+    '生成方式例如：ssh-keygen -m PEM -t ecdsa -f hostkey，然后执行：openssl ec -in hostkey -outform DER | base64 -w0',
+  sshAuthorizedKey: '授权的客户端公钥',
+  sshAuthorizedKeyHint: '一行标准 OpenSSH 公钥（仅支持 RSA 或 ECDSA——此构建拒绝 ed25519）。',
+  sshAuthorizedKeyPlaceholder: 'ecdsa-sha2-nistp256 AAAA... user@host',
+  sshNote:
+    '这是一个小型的专用 shell（help/list/groups/call <name> <json>），并非完整的设备控制台——其信任级别与物理串口访问相同，且需要通过真实的 SSH 握手才能进入。为已运行的服务器更换密钥需要重启。保存后密钥不会再返回给你查看。',
 
   sectionNetworkIp: '静态 IP（Wi-Fi）',
   netUseStatic: '使用静态 IP',

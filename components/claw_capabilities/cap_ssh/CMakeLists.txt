@@ -6,7 +6,6 @@ idf_component_register(
     REQUIRES
         claw_cap
         json
-        nvs_flash
         wolfssl
         wolfssh
         mbedtls

@@ -28,27 +28,32 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "mbedtls/base64.h"
-#include "nvs.h"
 
 static const char *TAG = "cap_ssh";
 
-#define CAP_SSH_NVS_NAMESPACE   "cap_ssh"
-#define CAP_SSH_NVS_KEY_HOSTKEY "hostkey"
-#define CAP_SSH_NVS_KEY_AUTHKEY "authkey"
-
 #define CAP_SSH_PORT            22
-#define CAP_SSH_HOSTKEY_MAX     4096  /* PEM text, plenty for RSA/ECDSA */
+#define CAP_SSH_HOSTKEY_MAX     2800  /* decoded DER; covers RSA 4096 (~2470B DER) and ECDSA with margin */
+#define CAP_SSH_HOSTKEY_B64_MAX 3800  /* base64 of CAP_SSH_HOSTKEY_MAX (3734B) plus room to spare —
+                                       * app_config persists this as an NVS string, capped at 4000
+                                       * bytes including the NUL terminator, so this must stay under it */
 #define CAP_SSH_AUTHKEY_MAX     600   /* decoded SSH wire pubkey blob */
+#define CAP_SSH_AUTHKEY_LINE_MAX 1024 /* full "type base64 comment" OpenSSH line */
 #define CAP_SSH_LINE_MAX        1024
 #define CAP_SSH_RESP_MAX        (16 * 1024)
 #define CAP_SSH_SERVER_STACK    16384 /* wolfSSH/wolfCrypt handshake is stack-heavy; tune after live testing */
 
-/* This is a build spike/v1: one session at a time, public-key auth only, a
- * small purpose-built shell (list/call/groups) rather than the full
- * esp_console REPL. See cap_ssh.h for the full rationale. */
+/* v1: one session at a time, public-key auth only, a small purpose-built
+ * shell (list/call/groups) rather than the full esp_console REPL. See
+ * cap_ssh.h for the full rationale, including the app_config-backed
+ * configuration flow (host_key_b64/authorized_public_key are kept verbatim
+ * alongside the decoded forms purely so cap_ssh_persist_current() can hand
+ * the original strings back to the persist provider unchanged). */
 typedef struct {
     SemaphoreHandle_t lock;
-    uint8_t hostkey[CAP_SSH_HOSTKEY_MAX]; /* PEM text, NUL-terminated */
+    bool enabled;
+    char host_key_b64[CAP_SSH_HOSTKEY_B64_MAX];
+    char authorized_public_key[CAP_SSH_AUTHKEY_LINE_MAX];
+    uint8_t hostkey[CAP_SSH_HOSTKEY_MAX]; /* decoded DER */
     size_t hostkey_len;
     uint8_t authkey[CAP_SSH_AUTHKEY_MAX]; /* decoded SSH wire pubkey blob */
     size_t authkey_len;
@@ -57,6 +62,10 @@ typedef struct {
 } cap_ssh_state_t;
 
 static cap_ssh_state_t s_ssh;
+static cap_ssh_persist_fn s_persist;
+static void *s_persist_ctx;
+
+static esp_err_t cap_ssh_start_server(void);
 
 static const char *cap_ssh_json_str(cJSON *root, const char *key)
 {
@@ -103,41 +112,94 @@ static bool cap_ssh_constant_time_eq(const uint8_t *a, const uint8_t *b, size_t 
     return diff == 0;
 }
 
-static esp_err_t cap_ssh_persist(void)
+static esp_err_t cap_ssh_ensure_lock(void)
 {
-    nvs_handle_t handle;
-    esp_err_t err = nvs_open(CAP_SSH_NVS_NAMESPACE, NVS_READWRITE, &handle);
+    if (!s_ssh.lock) {
+        s_ssh.lock = xSemaphoreCreateMutex();
+        if (!s_ssh.lock) {
+            return ESP_ERR_NO_MEM;
+        }
+    }
+    return ESP_OK;
+}
+
+esp_err_t cap_ssh_set_persist_provider(cap_ssh_persist_fn persist, void *user_ctx)
+{
+    s_persist = persist;
+    s_persist_ctx = user_ctx;
+    return ESP_OK;
+}
+
+/* Persist current state through the app-provided hook, if any. Mirrors
+ * cap_vpn's cap_vpn_persist_current(). */
+static bool cap_ssh_persist_current(void)
+{
+    if (!s_persist) {
+        return false;
+    }
+    xSemaphoreTake(s_ssh.lock, portMAX_DELAY);
+    cap_ssh_config_t cfg = {
+        .enabled = s_ssh.enabled,
+        .host_private_key_der_b64 = s_ssh.host_key_b64,
+        .authorized_public_key = s_ssh.authorized_public_key,
+    };
+    xSemaphoreGive(s_ssh.lock);
+    esp_err_t err = s_persist(&cfg, s_persist_ctx);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "SSH persist failed: %s", esp_err_to_name(err));
+    }
+    return err == ESP_OK;
+}
+
+esp_err_t cap_ssh_set_config(const cap_ssh_config_t *config)
+{
+    if (!config) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    esp_err_t err = cap_ssh_ensure_lock();
     if (err != ESP_OK) {
         return err;
     }
-    err = nvs_set_blob(handle, CAP_SSH_NVS_KEY_HOSTKEY, s_ssh.hostkey, s_ssh.hostkey_len);
-    if (err == ESP_OK) {
-        err = nvs_set_blob(handle, CAP_SSH_NVS_KEY_AUTHKEY, s_ssh.authkey, s_ssh.authkey_len);
-    }
-    if (err == ESP_OK) {
-        err = nvs_commit(handle);
-    }
-    nvs_close(handle);
-    return err;
-}
 
-static void cap_ssh_load_from_nvs(void)
-{
-    nvs_handle_t handle;
-    if (nvs_open(CAP_SSH_NVS_NAMESPACE, NVS_READONLY, &handle) != ESP_OK) {
-        return; /* not yet provisioned */
-    }
-    size_t hk_len = sizeof(s_ssh.hostkey);
-    size_t ak_len = sizeof(s_ssh.authkey);
-    bool have_hk = nvs_get_blob(handle, CAP_SSH_NVS_KEY_HOSTKEY, s_ssh.hostkey, &hk_len) == ESP_OK && hk_len > 0;
-    bool have_ak = nvs_get_blob(handle, CAP_SSH_NVS_KEY_AUTHKEY, s_ssh.authkey, &ak_len) == ESP_OK && ak_len > 0;
-    nvs_close(handle);
-    if (have_hk && have_ak) {
-        s_ssh.hostkey_len = hk_len;
-        s_ssh.authkey_len = ak_len;
+    bool have_host = config->host_private_key_der_b64 && config->host_private_key_der_b64[0];
+    bool have_auth = config->authorized_public_key && config->authorized_public_key[0];
+    bool should_start = false;
+
+    xSemaphoreTake(s_ssh.lock, portMAX_DELAY);
+    s_ssh.enabled = config->enabled;
+
+    if (have_host && have_auth) {
+        uint8_t hostkey_buf[CAP_SSH_HOSTKEY_MAX];
+        size_t hostkey_len = 0;
+        int b64ret = mbedtls_base64_decode(hostkey_buf, sizeof(hostkey_buf), &hostkey_len,
+                                           (const unsigned char *)config->host_private_key_der_b64,
+                                           strlen(config->host_private_key_der_b64));
+
+        uint8_t authkey_buf[CAP_SSH_AUTHKEY_MAX];
+        size_t authkey_len = 0;
+        esp_err_t parse_err = (b64ret == 0) ?
+            cap_ssh_parse_authorized_key(config->authorized_public_key, authkey_buf,
+                                         sizeof(authkey_buf), &authkey_len) :
+            ESP_ERR_INVALID_ARG;
+
+        if (b64ret != 0 || parse_err != ESP_OK) {
+            xSemaphoreGive(s_ssh.lock);
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        memcpy(s_ssh.hostkey, hostkey_buf, hostkey_len);
+        s_ssh.hostkey_len = hostkey_len;
+        memcpy(s_ssh.authkey, authkey_buf, authkey_len);
+        s_ssh.authkey_len = authkey_len;
+        strlcpy(s_ssh.host_key_b64, config->host_private_key_der_b64, sizeof(s_ssh.host_key_b64));
+        strlcpy(s_ssh.authorized_public_key, config->authorized_public_key,
+                sizeof(s_ssh.authorized_public_key));
         s_ssh.configured = true;
-        ESP_LOGI(TAG, "Loaded SSH host key + authorized key from NVS");
     }
+    should_start = s_ssh.enabled && s_ssh.configured;
+    xSemaphoreGive(s_ssh.lock);
+
+    return should_start ? cap_ssh_start_server() : ESP_OK;
 }
 
 /*
@@ -428,14 +490,16 @@ static esp_err_t cap_ssh_start_server(void)
 
 static esp_err_t cap_ssh_group_init(void)
 {
-    if (!s_ssh.lock) {
-        s_ssh.lock = xSemaphoreCreateMutex();
-        if (!s_ssh.lock) {
-            return ESP_ERR_NO_MEM;
-        }
+    esp_err_t err = cap_ssh_ensure_lock();
+    if (err != ESP_OK) {
+        return err;
     }
-    cap_ssh_load_from_nvs();
-    if (s_ssh.configured) {
+    /* Config already applied by app_capabilities' SSH "prepare" hook (which
+     * runs before group registration) via cap_ssh_set_config() — that call
+     * already started the server if enabled+configured. This is just a
+     * defensive no-op re-check for callers that register the group without
+     * going through that hook (cap_ssh_start_server() is idempotent). */
+    if (s_ssh.enabled && s_ssh.configured) {
         cap_ssh_start_server();
     }
     return ESP_OK;
@@ -452,7 +516,9 @@ static esp_err_t cap_ssh_group_init(void)
  * Root-agent only — not reachable over MQTT, by the same caller-check every
  * other ROOT_AGENT_ONLY tool relies on. Starts the SSH server on first
  * successful configure; v1 does not support a live restart on reconfigure
- * (requires a reboot to pick up a changed key).
+ * (requires a reboot to pick up a changed key). Applies via cap_ssh_set_config()
+ * and persists through the app-provided hook, exactly like vpn_configure —
+ * this tool never touches storage directly.
  */
 static esp_err_t cap_ssh_configure_execute(const char *input_json,
                                            const claw_cap_call_context_t *ctx,
@@ -477,45 +543,31 @@ static esp_err_t cap_ssh_configure_execute(const char *input_json,
         return ESP_ERR_INVALID_ARG;
     }
 
-    uint8_t hostkey_buf[CAP_SSH_HOSTKEY_MAX];
-    size_t hostkey_len = 0;
-    int b64ret = mbedtls_base64_decode(hostkey_buf, sizeof(hostkey_buf), &hostkey_len,
-                                       (const unsigned char *)host_key_b64, strlen(host_key_b64));
-    if (b64ret != 0) {
-        cJSON_Delete(input);
-        snprintf(output, output_size, "Error: host_private_key_der_b64 is not valid base64 (or too large)");
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    uint8_t authkey_buf[CAP_SSH_AUTHKEY_MAX];
-    size_t authkey_len = 0;
-    esp_err_t err = cap_ssh_parse_authorized_key(authorized_key_line, authkey_buf, sizeof(authkey_buf), &authkey_len);
-    if (err != ESP_OK) {
-        cJSON_Delete(input);
-        snprintf(output, output_size, "Error: authorized_public_key is not a valid OpenSSH public key line");
-        return err;
-    }
-
-    xSemaphoreTake(s_ssh.lock, portMAX_DELAY);
-    memcpy(s_ssh.hostkey, hostkey_buf, hostkey_len);
-    s_ssh.hostkey_len = hostkey_len;
-    memcpy(s_ssh.authkey, authkey_buf, authkey_len);
-    s_ssh.authkey_len = authkey_len;
-    s_ssh.configured = true;
-    xSemaphoreGive(s_ssh.lock);
+    char host_key_buf[CAP_SSH_HOSTKEY_B64_MAX];
+    char auth_key_buf[CAP_SSH_AUTHKEY_LINE_MAX];
+    strlcpy(host_key_buf, host_key_b64, sizeof(host_key_buf));
+    strlcpy(auth_key_buf, authorized_key_line, sizeof(auth_key_buf));
     cJSON_Delete(input);
 
-    err = cap_ssh_persist();
+    cap_ssh_config_t cfg = {
+        .enabled = true,
+        .host_private_key_der_b64 = host_key_buf,
+        .authorized_public_key = auth_key_buf,
+    };
+    bool already_running = s_ssh.server_task != NULL;
+    esp_err_t err = cap_ssh_set_config(&cfg);
     if (err != ESP_OK) {
-        snprintf(output, output_size, "Error: failed to persist SSH configuration (%s)", esp_err_to_name(err));
+        snprintf(output, output_size,
+                 "Error: invalid host_private_key_der_b64 (base64/DER) or authorized_public_key "
+                 "(OpenSSH public key line)");
         return err;
     }
 
-    bool already_running = s_ssh.server_task != NULL;
-    cap_ssh_start_server();
+    bool persisted = cap_ssh_persist_current();
 
     snprintf(output, output_size,
-             "{\"ok\":true,\"note\":\"SSH configuration saved.%s\"}",
+             "{\"ok\":true,\"persisted\":%s,\"note\":\"SSH configuration saved.%s\"}",
+             persisted ? "true" : "false",
              already_running ? " Server already running (reboot to apply changed keys)."
                               : " Server starting on port 22.");
     return ESP_OK;
@@ -531,10 +583,12 @@ static esp_err_t cap_ssh_status_execute(const char *input_json,
 
     xSemaphoreTake(s_ssh.lock, portMAX_DELAY);
     bool configured = s_ssh.configured;
+    bool enabled = s_ssh.enabled;
     xSemaphoreGive(s_ssh.lock);
 
     snprintf(output, output_size,
-             "{\"configured\":%s,\"running\":%s,\"port\":%d}",
+             "{\"enabled\":%s,\"configured\":%s,\"running\":%s,\"port\":%d}",
+             enabled ? "true" : "false",
              configured ? "true" : "false",
              s_ssh.server_task ? "true" : "false",
              CAP_SSH_PORT);
