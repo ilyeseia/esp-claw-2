@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS
+        "src/cap_mcp_bridge.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        claw_cap
+        cap_mcp_server
+        json
+)

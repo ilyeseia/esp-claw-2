@@ -273,7 +273,7 @@ export const zhCn: Dict = {
   mcpCtrlPort: '控制端口',
   mcpCtrlPortHint: 'esp_http_server 内部控制端口，必须与服务端口不同。',
   mcpNote:
-    '目前服务器不暴露任何 MCP 工具（edge_agent 尚无连接其能力的工具桥接）——仅有协议握手和 mDNS 广播。修改任意字段都需要重启才能生效。',
+    '向任意 MCP 客户端暴露两个工具：claw_list（发现能力列表）和 claw_call（按名称调用）。调用时的信任级别与 MQTT 命令一致（受限的子智能体级别）——仅限根智能体的工具仍会被拒绝。该服务器本身没有登录验证，请仅在受信任的网络中开放。修改任意字段都需要重启才能生效。',
 
   sectionNetworkIp: '静态 IP（Wi-Fi）',
   netUseStatic: '使用静态 IP',

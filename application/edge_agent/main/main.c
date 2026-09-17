@@ -33,6 +33,7 @@
 #include "cap_system.h"
 #endif
 #if CONFIG_APP_CLAW_CAP_MCP_SERVER
+#include "cap_mcp_bridge.h"
 #include "cap_mcp_server.h"
 #include "mcp_mdns.h"
 #endif
@@ -520,15 +521,14 @@ void app_main(void)
     ESP_ERROR_CHECK(http_server_webim_bind_im());
 #endif
 #if CONFIG_APP_CLAW_CAP_MCP_SERVER
-    /* Same init->start order as application/mcp_server_point/main/main.c.
-     * Unlike that app, edge_agent has no dedicated MCP tool set (no
-     * cap_mcp_lua-style bridge exists yet for its many cap_* groups), so this
-     * starts the MCP server with zero tools registered: it's discoverable via
-     * mDNS (_mcp._tcp) and speaks the MCP protocol, but a connecting client
-     * sees an empty tool list until cap_mcp_server_add_tool() is called from
-     * somewhere. Hostname/instance/endpoint/ports are user-configurable via
-     * /api/config (group "mcp"); mcp_mdns_set_config() must run before
-     * cap_mcp_server_start(), since it refuses changes once started. */
+    /* Same init->tools->start order as application/mcp_server_point/main/main.c
+     * (that app's tools come from its own cap_mcp_lua; edge_agent's equivalent
+     * is cap_mcp_bridge, which forwards to claw_cap generically — see
+     * cap_mcp_bridge.h for why that's two generic tools rather than one MCP
+     * tool per capability). Hostname/instance/endpoint/ports are
+     * user-configurable via /api/config (group "mcp"); mcp_mdns_set_config()
+     * must run before cap_mcp_server_start(), since it refuses changes once
+     * started. */
     if (strcmp(s_config->mcp_enabled, "false") != 0) {
         mcp_mdns_config_t mcp_cfg = {
             .hostname = s_config->mcp_hostname,
@@ -539,6 +539,7 @@ void app_main(void)
         };
         ESP_ERROR_CHECK(mcp_mdns_set_config(&mcp_cfg));
         ESP_ERROR_CHECK(cap_mcp_server_init());
+        ESP_ERROR_CHECK(cap_mcp_bridge_init());
         ESP_ERROR_CHECK(cap_mcp_server_start());
     } else {
         ESP_LOGI(TAG, "MCP server disabled via config");

@@ -40,3 +40,8 @@ dependencies:
     path: ../../../components/common/esp_video
     matches:
     - if: $CONFIG{ESP_BOARD_DEV_CAMERA_SUPPORT} == True
+
+  cap_mcp_bridge:
+    rules:
+    - if: $CONFIG{APP_CLAW_CAP_MCP_SERVER} == True
+    path: ../../../components/claw_capabilities/cap_mcp_bridge

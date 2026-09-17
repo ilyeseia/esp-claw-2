@@ -281,7 +281,7 @@ export const en = {
   mcpCtrlPort: 'Control port',
   mcpCtrlPortHint: 'Internal esp_http_server control port; must differ from the server port.',
   mcpNote:
-    'Currently the server exposes no MCP tools (edge_agent has no tool bridge for its capabilities yet) — only the protocol handshake and mDNS advertisement. Changing any field needs a restart to apply.',
+    'Exposes two tools to any MCP client: claw_list (discover capabilities) and claw_call (invoke one by name). Calls run with the same restricted, sub-agent-level trust as MQTT commands — root-only tools stay blocked. This server has no login of its own, so only expose it on a trusted network. Changing any field needs a restart to apply.',
 
   sectionNetworkIp: 'Static IP (Wi-Fi)',
   netUseStatic: 'Use a static IP',
