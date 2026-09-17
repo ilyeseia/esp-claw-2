@@ -73,6 +73,12 @@ export type AppConfig = {
   net_netmask: string;
   net_dns: string;
   net_dns2: string;
+  mcp_enabled: string;
+  mcp_hostname: string;
+  mcp_instance_name: string;
+  mcp_endpoint: string;
+  mcp_server_port: string;
+  mcp_ctrl_port: string;
   enabled_cap_groups: string;
   llm_visible_cap_groups: string;
   enabled_lua_modules: string;
@@ -89,6 +95,7 @@ export type ConfigGroup =
   | 'mqtt'
   | 'vpn'
   | 'network'
+  | 'mcp'
   | 'capabilities'
   | 'skills'
   | 'time';
@@ -163,6 +170,14 @@ export const GROUP_FIELDS: Record<ConfigGroup, (keyof AppConfig)[]> = {
     'wg_make_default',
   ],
   network: ['net_use_static', 'net_ip', 'net_gateway', 'net_netmask', 'net_dns', 'net_dns2'],
+  mcp: [
+    'mcp_enabled',
+    'mcp_hostname',
+    'mcp_instance_name',
+    'mcp_endpoint',
+    'mcp_server_port',
+    'mcp_ctrl_port',
+  ],
   capabilities: ['enabled_cap_groups', 'llm_visible_cap_groups'],
   skills: ['enabled_lua_modules'],
   time: ['time_timezone'],

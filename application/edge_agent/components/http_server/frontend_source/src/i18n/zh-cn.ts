@@ -25,6 +25,7 @@ export const zhCn: Dict = {
   navMqtt: 'MQTT',
   navVpn: 'VPN',
   navNetwork: '网络',
+  navMcp: 'MCP 服务器',
   navMemory: '记忆管理',
   navCapabilities: 'Capabilities 管理',
   navLuaModules: 'Lua 模块管理',
@@ -259,6 +260,20 @@ export const zhCn: Dict = {
   wgMakeDefaultHint: '将所有流量经隧道转发，而不仅是允许的 IP。',
   wgNote:
     '设备上运行真实的 WireGuard 隧道。密钥保存在设备上，且不会出现在智能体输出中。握手需要有效时钟（SNTP）；使用 vpn_status 确认。',
+
+  sectionMcpServer: 'MCP 服务器',
+  mcpEnabled: '启用 MCP 服务器',
+  mcpEnabledHint: '通过 HTTP 暴露一个 MCP（Model Context Protocol）端点。更改后需要重启才能生效。',
+  mcpHostname: 'mDNS 主机名',
+  mcpHostnameHint: '以 <hostname>.local 形式广播，此处不含 ".local" 后缀。',
+  mcpInstanceName: '实例名称',
+  mcpEndpoint: 'HTTP 端点路径',
+  mcpEndpointPlaceholder: 'mcp',
+  mcpServerPort: '服务端口',
+  mcpCtrlPort: '控制端口',
+  mcpCtrlPortHint: 'esp_http_server 内部控制端口，必须与服务端口不同。',
+  mcpNote:
+    '目前服务器不暴露任何 MCP 工具（edge_agent 尚无连接其能力的工具桥接）——仅有协议握手和 mDNS 广播。修改任意字段都需要重启才能生效。',
 
   sectionNetworkIp: '静态 IP（Wi-Fi）',
   netUseStatic: '使用静态 IP',

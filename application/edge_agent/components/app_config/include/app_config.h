@@ -96,6 +96,14 @@ typedef struct {
     char net_netmask[20];                   /* default 255.255.255.0 */
     char net_dns[20];                       /* primary DNS */
     char net_dns2[20];                      /* secondary DNS (optional) */
+    /* cap_mcp_server (MCP protocol server, separate from the /api/config HTTP
+     * server). No secrets here — mcp_mdns_config_t mirrors these sizes. */
+    char mcp_enabled[8];                    /* "true" / "false" */
+    char mcp_hostname[64];                  /* mDNS hostname, without ".local" */
+    char mcp_instance_name[64];
+    char mcp_endpoint[64];                  /* HTTP path, e.g. "mcp" */
+    char mcp_server_port[16];
+    char mcp_ctrl_port[16];                 /* esp_http_server control port */
     char enabled_cap_groups[APP_CONFIG_STR_LEN];
     char llm_visible_cap_groups[APP_CONFIG_STR_LEN];
     char enabled_lua_modules[APP_CONFIG_STR_LEN];

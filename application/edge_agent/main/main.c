@@ -34,6 +34,7 @@
 #endif
 #if CONFIG_APP_CLAW_CAP_MCP_SERVER
 #include "cap_mcp_server.h"
+#include "mcp_mdns.h"
 #endif
 
 #define APP_ENABLE_MEM_LOG        (0)
@@ -523,11 +524,25 @@ void app_main(void)
      * Unlike that app, edge_agent has no dedicated MCP tool set (no
      * cap_mcp_lua-style bridge exists yet for its many cap_* groups), so this
      * starts the MCP server with zero tools registered: it's discoverable via
-     * mDNS (_mcp._tcp, default port 18791) and speaks the MCP protocol, but a
-     * connecting client sees an empty tool list until cap_mcp_server_add_tool()
-     * is called from somewhere. */
-    ESP_ERROR_CHECK(cap_mcp_server_init());
-    ESP_ERROR_CHECK(cap_mcp_server_start());
+     * mDNS (_mcp._tcp) and speaks the MCP protocol, but a connecting client
+     * sees an empty tool list until cap_mcp_server_add_tool() is called from
+     * somewhere. Hostname/instance/endpoint/ports are user-configurable via
+     * /api/config (group "mcp"); mcp_mdns_set_config() must run before
+     * cap_mcp_server_start(), since it refuses changes once started. */
+    if (strcmp(s_config->mcp_enabled, "false") != 0) {
+        mcp_mdns_config_t mcp_cfg = {
+            .hostname = s_config->mcp_hostname,
+            .instance_name = s_config->mcp_instance_name,
+            .endpoint = s_config->mcp_endpoint,
+            .server_port = (uint16_t)atoi(s_config->mcp_server_port),
+            .ctrl_port = (uint16_t)atoi(s_config->mcp_ctrl_port),
+        };
+        ESP_ERROR_CHECK(mcp_mdns_set_config(&mcp_cfg));
+        ESP_ERROR_CHECK(cap_mcp_server_init());
+        ESP_ERROR_CHECK(cap_mcp_server_start());
+    } else {
+        ESP_LOGI(TAG, "MCP server disabled via config");
+    }
 #endif
 
     register_wifi_command();

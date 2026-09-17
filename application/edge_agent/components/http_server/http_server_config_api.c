@@ -111,6 +111,13 @@ static const config_field_def_t CONFIG_FIELDS[] = {
     CONFIG_FIELD("network",      net_dns),
     CONFIG_FIELD("network",      net_dns2),
 
+    CONFIG_FIELD("mcp",          mcp_enabled),
+    CONFIG_FIELD("mcp",          mcp_hostname),
+    CONFIG_FIELD("mcp",          mcp_instance_name),
+    CONFIG_FIELD("mcp",          mcp_endpoint),
+    CONFIG_FIELD("mcp",          mcp_server_port),
+    CONFIG_FIELD("mcp",          mcp_ctrl_port),
+
     CONFIG_FIELD("capabilities", enabled_cap_groups),
     CONFIG_FIELD("capabilities", llm_visible_cap_groups),
 

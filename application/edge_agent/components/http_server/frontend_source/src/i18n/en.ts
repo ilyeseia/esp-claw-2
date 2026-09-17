@@ -23,6 +23,7 @@ export const en = {
   navMqtt: 'MQTT',
   navVpn: 'VPN',
   navNetwork: 'Network',
+  navMcp: 'MCP Server',
   navMemory: 'Memory',
   navCapabilities: 'Capabilities',
   navLuaModules: 'Lua Modules',
@@ -267,6 +268,20 @@ export const en = {
   wgMakeDefaultHint: 'Route all traffic through the tunnel instead of only allowed IPs.',
   wgNote:
     'A real WireGuard tunnel runs on the device. Keys are stored on the device and never shown in agent output. A valid clock (SNTP) is required for the handshake; use vpn_status to confirm.',
+
+  sectionMcpServer: 'MCP Server',
+  mcpEnabled: 'Enable MCP server',
+  mcpEnabledHint: 'Exposes an MCP (Model Context Protocol) endpoint over HTTP. Takes effect after a restart.',
+  mcpHostname: 'mDNS hostname',
+  mcpHostnameHint: 'Advertised as <hostname>.local, without the ".local" suffix.',
+  mcpInstanceName: 'Instance name',
+  mcpEndpoint: 'HTTP endpoint path',
+  mcpEndpointPlaceholder: 'mcp',
+  mcpServerPort: 'Server port',
+  mcpCtrlPort: 'Control port',
+  mcpCtrlPortHint: 'Internal esp_http_server control port; must differ from the server port.',
+  mcpNote:
+    'Currently the server exposes no MCP tools (edge_agent has no tool bridge for its capabilities yet) — only the protocol handshake and mDNS advertisement. Changing any field needs a restart to apply.',
 
   sectionNetworkIp: 'Static IP (Wi-Fi)',
   netUseStatic: 'Use a static IP',

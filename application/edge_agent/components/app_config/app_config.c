@@ -95,6 +95,12 @@ typedef struct {
 #define APP_DEFAULT_NET_NETMASK              "255.255.255.0"
 #define APP_DEFAULT_NET_DNS                  ""
 #define APP_DEFAULT_NET_DNS2                 ""
+#define APP_DEFAULT_MCP_ENABLED              "true"
+#define APP_DEFAULT_MCP_HOSTNAME             "esp-claw"
+#define APP_DEFAULT_MCP_INSTANCE_NAME        "ESP-Claw"
+#define APP_DEFAULT_MCP_ENDPOINT             "mcp"
+#define APP_DEFAULT_MCP_SERVER_PORT          "18791"
+#define APP_DEFAULT_MCP_CTRL_PORT            "18792"
 #define APP_DEFAULT_ENABLED_CAP_GROUPS       ""
 #define APP_DEFAULT_LLM_VISIBLE_CAP_GROUPS   ""
 #define APP_DEFAULT_ENABLED_LUA_MODULES      ""
@@ -169,6 +175,12 @@ static const app_config_field_t s_fields[] = {
     APP_CONFIG_FIELD(net_netmask, "net_mask", APP_DEFAULT_NET_NETMASK),
     APP_CONFIG_FIELD(net_dns, "net_dns", APP_DEFAULT_NET_DNS),
     APP_CONFIG_FIELD(net_dns2, "net_dns2", APP_DEFAULT_NET_DNS2),
+    APP_CONFIG_FIELD(mcp_enabled, "mcp_en", APP_DEFAULT_MCP_ENABLED),
+    APP_CONFIG_FIELD(mcp_hostname, "mcp_host", APP_DEFAULT_MCP_HOSTNAME),
+    APP_CONFIG_FIELD(mcp_instance_name, "mcp_inst", APP_DEFAULT_MCP_INSTANCE_NAME),
+    APP_CONFIG_FIELD(mcp_endpoint, "mcp_ep", APP_DEFAULT_MCP_ENDPOINT),
+    APP_CONFIG_FIELD(mcp_server_port, "mcp_port", APP_DEFAULT_MCP_SERVER_PORT),
+    APP_CONFIG_FIELD(mcp_ctrl_port, "mcp_ctrl_port", APP_DEFAULT_MCP_CTRL_PORT),
     APP_CONFIG_FIELD(enabled_cap_groups, "en_cap_groups", APP_DEFAULT_ENABLED_CAP_GROUPS),
     APP_CONFIG_FIELD(llm_visible_cap_groups, "vis_cap_groups", APP_DEFAULT_LLM_VISIBLE_CAP_GROUPS),
     APP_CONFIG_FIELD(enabled_lua_modules, "en_lua_mods", APP_DEFAULT_ENABLED_LUA_MODULES),
