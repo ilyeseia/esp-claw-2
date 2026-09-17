@@ -230,6 +230,16 @@ menu "App Claw Config"
                 accept any token. Default n: new, security-sensitive, opt-in
                 until proven on real hardware.
 
+        config APP_CLAW_CAP_SSH
+            bool "Enable SSH remote console capability (cap_ssh)"
+            default n
+            help
+                Network-reachable SSH console (wolfSSH), public-key auth only
+                (RSA/ECDSA client keys; ed25519 is rejected by this wolfSSH
+                build). Live-verified end to end on real hardware. Default n:
+                pulls in a new crypto/SSH dependency and requires enabling
+                CONFIG_ESP_ENABLE_WOLFSSH too (see the wolfSSH submenu).
+
         config APP_CLAW_CAP_ROUTER_MGR
             bool "Enable router manager capability"
             select APP_CLAW_CAP_EVENT_ROUTER
