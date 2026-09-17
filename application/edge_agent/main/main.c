@@ -32,6 +32,9 @@
 #if CONFIG_APP_CLAW_CAP_SYSTEM
 #include "cap_system.h"
 #endif
+#if CONFIG_APP_CLAW_CAP_MCP_SERVER
+#include "cap_mcp_server.h"
+#endif
 
 #define APP_ENABLE_MEM_LOG        (0)
 
@@ -514,6 +517,17 @@ void app_main(void)
 #endif
 #if CONFIG_APP_CLAW_CAP_IM_LOCAL
     ESP_ERROR_CHECK(http_server_webim_bind_im());
+#endif
+#if CONFIG_APP_CLAW_CAP_MCP_SERVER
+    /* Same init->start order as application/mcp_server_point/main/main.c.
+     * Unlike that app, edge_agent has no dedicated MCP tool set (no
+     * cap_mcp_lua-style bridge exists yet for its many cap_* groups), so this
+     * starts the MCP server with zero tools registered: it's discoverable via
+     * mDNS (_mcp._tcp, default port 18791) and speaks the MCP protocol, but a
+     * connecting client sees an empty tool list until cap_mcp_server_add_tool()
+     * is called from somewhere. */
+    ESP_ERROR_CHECK(cap_mcp_server_init());
+    ESP_ERROR_CHECK(cap_mcp_server_start());
 #endif
 
     register_wifi_command();
