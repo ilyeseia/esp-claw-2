@@ -100,10 +100,30 @@ static esp_err_t parse_chat_response(const char *body,
     }
 
     memset(out_response, 0, sizeof(*out_response));
+    out_response->usage_prompt_tokens = -1;
+    out_response->usage_completion_tokens = -1;
+    out_response->usage_total_tokens = -1;
     root = cJSON_Parse(body);
     if (!root) {
         *out_error_message = dup_printf("Failed to parse LLM JSON response");
         return ESP_FAIL;
+    }
+
+    {
+        cJSON *usage = cJSON_GetObjectItem(root, "usage");
+        cJSON *prompt_tokens = usage ? cJSON_GetObjectItem(usage, "prompt_tokens") : NULL;
+        cJSON *completion_tokens = usage ? cJSON_GetObjectItem(usage, "completion_tokens") : NULL;
+        cJSON *total_tokens = usage ? cJSON_GetObjectItem(usage, "total_tokens") : NULL;
+
+        if (cJSON_IsNumber(prompt_tokens)) {
+            out_response->usage_prompt_tokens = prompt_tokens->valueint;
+        }
+        if (cJSON_IsNumber(completion_tokens)) {
+            out_response->usage_completion_tokens = completion_tokens->valueint;
+        }
+        if (cJSON_IsNumber(total_tokens)) {
+            out_response->usage_total_tokens = total_tokens->valueint;
+        }
     }
 
     choices = cJSON_GetObjectItem(root, "choices");

@@ -12,6 +12,7 @@
 
 #include "cJSON.h"
 #include "claw_cap.h"
+#include "claw_core_llm.h"
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -627,6 +628,48 @@ cleanup:
     return err;
 }
 
+/*
+ * llm_usage_status: device-wide (root agent + any subagents) running totals
+ * of LLM token usage since boot or the last reset, from every backend that
+ * reported a "usage" object (OpenAI-compatible, Anthropic). Raw token
+ * counts only — no $ estimate, since per-token pricing is provider/model
+ * specific and would go stale if hardcoded here. Pass {"reset":true} to
+ * zero the counters (e.g. to start tracking from a known point).
+ */
+static esp_err_t llm_usage_status_execute(const char *input_json,
+                                          const claw_cap_call_context_t *ctx,
+                                          char *output,
+                                          size_t output_size)
+{
+    (void)ctx;
+
+    if (input_json && input_json[0]) {
+        cJSON *input = cJSON_Parse(input_json);
+        if (input) {
+            cJSON *reset = cJSON_GetObjectItem(input, "reset");
+            if (cJSON_IsTrue(reset)) {
+                claw_core_llm_reset_usage_totals();
+            }
+            cJSON_Delete(input);
+        }
+    }
+
+    claw_core_llm_usage_totals_t totals = {0};
+    claw_core_llm_get_usage_totals(&totals);
+
+    snprintf(output, output_size,
+             "{\"total_prompt_tokens\":%llu,\"total_completion_tokens\":%llu,"
+             "\"total_tokens\":%llu,\"requests_with_usage\":%u,\"requests_unknown_usage\":%u,"
+             "\"note\":\"Raw token counts since boot/last reset; convert to cost using your "
+             "provider's current per-token pricing.\"}",
+             (unsigned long long)totals.total_prompt_tokens,
+             (unsigned long long)totals.total_completion_tokens,
+             (unsigned long long)totals.total_tokens,
+             (unsigned)totals.request_count_with_usage,
+             (unsigned)totals.request_count_unknown_usage);
+    return ESP_OK;
+}
+
 static const claw_cap_descriptor_t s_llm_config_caps[] = {
     {
         .id = "llm_config_command",
@@ -637,6 +680,18 @@ static const claw_cap_descriptor_t s_llm_config_caps[] = {
         .cap_flags = CLAW_CAP_FLAG_RESTRICTED,
         .input_schema_json = "{\"type\":\"object\",\"properties\":{\"command\":{\"type\":\"string\"}}}",
         .execute = llm_config_execute,
+    },
+    {
+        .id = "llm_usage_status",
+        .name = "llm_usage_status",
+        .family = "app",
+        .description = "Report device-wide LLM token usage totals since boot/last reset "
+                       "(prompt/completion/total tokens, request counts). Raw counts only, "
+                       "no cost estimate. Pass {\"reset\":true} to zero the counters.",
+        .kind = CLAW_CAP_KIND_CALLABLE,
+        .cap_flags = CLAW_CAP_FLAG_CALLABLE_BY_LLM,
+        .input_schema_json = "{\"type\":\"object\",\"properties\":{\"reset\":{\"type\":\"boolean\"}}}",
+        .execute = llm_usage_status_execute,
     },
 };
 

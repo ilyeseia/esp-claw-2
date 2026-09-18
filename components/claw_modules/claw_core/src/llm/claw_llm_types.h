@@ -74,6 +74,13 @@ typedef struct {
     char *raw_message_json;
     claw_llm_tool_call_t *tool_calls;
     size_t tool_call_count;
+    /* Token usage for this call, if the backend's response included it
+     * (OpenAI-compatible "usage" object, Anthropic "usage" object). -1 means
+     * "not reported by this backend/response" — never presented as 0, which
+     * would look like a real zero-cost call. */
+    int usage_prompt_tokens;
+    int usage_completion_tokens;
+    int usage_total_tokens;
 } claw_llm_response_t;
 
 typedef struct {

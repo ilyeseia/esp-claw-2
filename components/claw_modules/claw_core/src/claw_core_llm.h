@@ -26,6 +26,25 @@ typedef struct {
 typedef claw_llm_tool_call_t claw_core_llm_tool_call_t;
 typedef claw_llm_response_t claw_core_llm_response_t;
 
+/* Device-wide (all claw_core instances: root agent + any subagents) running
+ * totals of LLM token usage, accumulated from every chat_messages() call
+ * whose backend reported a "usage" object (OpenAI-compatible and Anthropic
+ * both do; a custom backend that doesn't just isn't counted in the token
+ * totals — see request_count_unknown_usage).
+ * Raw token counts only, deliberately not converted to a $ estimate: actual
+ * per-token pricing is provider- and model-specific and changes over time,
+ * so a hardcoded conversion here would silently go stale. */
+typedef struct {
+    uint32_t request_count_with_usage;
+    uint32_t request_count_unknown_usage;
+    uint64_t total_prompt_tokens;
+    uint64_t total_completion_tokens;
+    uint64_t total_tokens;
+} claw_core_llm_usage_totals_t;
+
+void claw_core_llm_get_usage_totals(claw_core_llm_usage_totals_t *out_totals);
+void claw_core_llm_reset_usage_totals(void);
+
 esp_err_t claw_core_llm_init(const claw_core_llm_config_t *config,
                              claw_llm_runtime_t **out_runtime,
                              char **out_error_message);

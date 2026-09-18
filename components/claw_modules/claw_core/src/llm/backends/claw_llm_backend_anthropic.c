@@ -485,10 +485,32 @@ static esp_err_t parse_chat_response(const char *body,
     }
 
     memset(out_response, 0, sizeof(*out_response));
+    out_response->usage_prompt_tokens = -1;
+    out_response->usage_completion_tokens = -1;
+    out_response->usage_total_tokens = -1;
     root = cJSON_Parse(body);
     if (!root) {
         *out_error_message = dup_printf("Failed to parse LLM JSON response");
         return ESP_FAIL;
+    }
+
+    {
+        /* Anthropic's usage object has no total_tokens field (unlike
+         * OpenAI-compatible), so it's computed here when both halves are
+         * present. */
+        cJSON *usage = cJSON_GetObjectItem(root, "usage");
+        cJSON *input_tokens = usage ? cJSON_GetObjectItem(usage, "input_tokens") : NULL;
+        cJSON *output_tokens = usage ? cJSON_GetObjectItem(usage, "output_tokens") : NULL;
+
+        if (cJSON_IsNumber(input_tokens)) {
+            out_response->usage_prompt_tokens = input_tokens->valueint;
+        }
+        if (cJSON_IsNumber(output_tokens)) {
+            out_response->usage_completion_tokens = output_tokens->valueint;
+        }
+        if (cJSON_IsNumber(input_tokens) && cJSON_IsNumber(output_tokens)) {
+            out_response->usage_total_tokens = input_tokens->valueint + output_tokens->valueint;
+        }
     }
 
     content = cJSON_GetObjectItem(root, "content");

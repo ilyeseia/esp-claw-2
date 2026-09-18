@@ -18,6 +18,61 @@ static const char *TAG = "claw_core_llm";
 #define CLAW_CORE_LOG_FULL_LLM_REQUEST 0
 #endif
 
+static portMUX_TYPE s_usage_mux = portMUX_INITIALIZER_UNLOCKED;
+static claw_core_llm_usage_totals_t s_usage_totals;
+
+/* Called after every successful chat_messages() call (primary or fallback
+ * backend). Only whole requests are counted here — a per-round accounting
+ * inside the agent's tool-call loop would double count, since each round of
+ * that loop is itself a full chat_messages() call already. */
+static void claw_core_llm_accumulate_usage(const claw_llm_response_t *response)
+{
+    if (!response) {
+        return;
+    }
+
+    bool has_usage = response->usage_prompt_tokens >= 0 ||
+                     response->usage_completion_tokens >= 0 ||
+                     response->usage_total_tokens >= 0;
+
+    portENTER_CRITICAL(&s_usage_mux);
+    if (has_usage) {
+        s_usage_totals.request_count_with_usage++;
+        if (response->usage_prompt_tokens >= 0) {
+            s_usage_totals.total_prompt_tokens += (uint64_t)response->usage_prompt_tokens;
+        }
+        if (response->usage_completion_tokens >= 0) {
+            s_usage_totals.total_completion_tokens += (uint64_t)response->usage_completion_tokens;
+        }
+        if (response->usage_total_tokens >= 0) {
+            s_usage_totals.total_tokens += (uint64_t)response->usage_total_tokens;
+        } else if (response->usage_prompt_tokens >= 0 && response->usage_completion_tokens >= 0) {
+            s_usage_totals.total_tokens +=
+                (uint64_t)(response->usage_prompt_tokens + response->usage_completion_tokens);
+        }
+    } else {
+        s_usage_totals.request_count_unknown_usage++;
+    }
+    portEXIT_CRITICAL(&s_usage_mux);
+}
+
+void claw_core_llm_get_usage_totals(claw_core_llm_usage_totals_t *out_totals)
+{
+    if (!out_totals) {
+        return;
+    }
+    portENTER_CRITICAL(&s_usage_mux);
+    *out_totals = s_usage_totals;
+    portEXIT_CRITICAL(&s_usage_mux);
+}
+
+void claw_core_llm_reset_usage_totals(void)
+{
+    portENTER_CRITICAL(&s_usage_mux);
+    memset(&s_usage_totals, 0, sizeof(s_usage_totals));
+    portEXIT_CRITICAL(&s_usage_mux);
+}
+
 static char *dup_printf(const char *fmt, ...)
 {
     va_list args;
@@ -267,7 +322,9 @@ esp_err_t claw_core_llm_chat_messages(claw_core_handle_t core,
     if (core->llm_lock) {
         xSemaphoreGive(core->llm_lock);
     }
-    if (err != ESP_OK) {
+    if (err == ESP_OK) {
+        claw_core_llm_accumulate_usage(out_response);
+    } else {
         ESP_LOGE(TAG, "chat_messages: runtime chat failed err=0x%x", err);
     }
     return err;

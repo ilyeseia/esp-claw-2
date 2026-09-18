@@ -489,6 +489,32 @@ finish_request:
                 }
             }
         }
+        /*
+         * The technical error above (raw HTTP status/body or ESP error name,
+         * e.g. "HTTP 401: {...}" or "HTTP request failed: ESP_ERR_HTTP_CONNECT")
+         * is exactly what claw_core_publish_out_message_if_requested() below
+         * would otherwise send verbatim to the user's chat channel (see
+         * build_agent_out_message_event(), which uses response.error_message
+         * as-is when status != OK) — fine for the log line and the failure
+         * trace just persisted above, but not something an end user on
+         * Telegram/WeChat/WebIM should see raw. Swap in a clear, generic
+         * message for that outgoing chat reply only:
+         *   - Only when PUBLISH_OUT_MESSAGE is actually set, i.e. only for
+         *     IM-channel-triggered requests (see
+         *     claw_event_router_execute_agent_action()) — console-triggered
+         *     ask/ask_once requests don't set this flag and go through
+         *     claw_core_response_push()/claw_core_receive() instead, where
+         *     the raw technical detail is exactly what a developer wants.
+         *   - "request cancelled" is an intentional user action, not a
+         *     backend failure, so it's left alone.
+         */
+        if (err != ESP_OK && response.view.error_message &&
+                (request.view.flags & CLAW_CORE_REQUEST_FLAG_PUBLISH_OUT_MESSAGE) &&
+                strcmp(response.view.error_message, "request cancelled") != 0) {
+            free(response.view.error_message);
+            response.view.error_message = claw_utils_string_dup(
+                "Sorry, I couldn't reach the AI backend just now. Please try again shortly.");
+        }
         claw_core_publish_out_message_if_requested(&request, &response);
         if (request.view.flags & CLAW_CORE_REQUEST_FLAG_SKIP_RESPONSE_QUEUE) {
             claw_core_free_response_item(&response);
