@@ -375,17 +375,36 @@ static void cap_ssh_session_loop(WOLFSSH *ssh)
         if (n <= 0) {
             break;
         }
+        /*
+         * Echoes what's typed, including basic backspace handling. Every
+         * earlier test this session piped input from a file
+         * ("Pseudo-terminal will not be allocated because stdin is not a
+         * terminal."), where a human never sees the missing echo — a real
+         * interactive client (a plain `ssh user@host`, real tty on both
+         * ends) looks frozen without it, since nothing appears as you type.
+         * This is not a real hang: the dispatch loop below already worked
+         * correctly for piped input; it just never had anyone watching a
+         * live terminal to notice there was no visual feedback.
+         */
         bool should_close = false;
         for (int i = 0; i < n && !should_close; i++) {
             char c = (char)buf[i];
             if (c == '\r' || c == '\n') {
+                cap_ssh_send(ssh, "\r\n");
                 if (line_len > 0) {
                     line[line_len] = '\0';
                     should_close = cap_ssh_dispatch_line(ssh, line, output, CAP_SSH_RESP_MAX);
                     line_len = 0;
                 }
+            } else if (c == 0x7f || c == 0x08) { /* DEL or BS */
+                if (line_len > 0) {
+                    line_len--;
+                    cap_ssh_send(ssh, "\b \b");
+                }
             } else if (line_len < sizeof(line) - 1) {
                 line[line_len++] = c;
+                char echo_buf[2] = {c, '\0'};
+                cap_ssh_send(ssh, echo_buf);
             }
         }
         if (should_close) {
