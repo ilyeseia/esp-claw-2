@@ -158,6 +158,43 @@ esp_err_t settings_store_set_string(const char *key, const char *value)
     return err;
 }
 
+esp_err_t settings_store_set_strings(const settings_store_kv_t *items, size_t count)
+{
+    if (!items && count > 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (count == 0) {
+        return ESP_OK;
+    }
+
+    nvs_handle_t handle;
+    esp_err_t err = settings_store_open(NVS_READWRITE, &handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "nvs_open failed: %s", esp_err_to_name(err));
+        return err;
+    }
+
+    for (size_t i = 0; i < count; i++) {
+        if (!items[i].key) {
+            continue;
+        }
+        err = nvs_set_str(handle, items[i].key, items[i].value ? items[i].value : "");
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "nvs_set_str(%s) failed: %s", items[i].key, esp_err_to_name(err));
+            nvs_close(handle); /* no commit: this batch is all-or-nothing */
+            return err;
+        }
+    }
+
+    err = nvs_commit(handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "nvs_commit failed: %s", esp_err_to_name(err));
+    }
+
+    nvs_close(handle);
+    return err;
+}
+
 esp_err_t settings_store_erase_key(const char *key)
 {
     if (!key) {

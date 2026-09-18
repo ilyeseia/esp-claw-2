@@ -73,6 +73,51 @@ typedef struct {
 
 static EXT_RAM_BSS_ATTR claw_cap_runtime_t s_runtime = {0};
 
+/*
+ * Cache for claw_cap_build_llm_tools_json()'s result, keyed by (caller class,
+ * wrap_for_responses_api). With ~90 registered capabilities, building this
+ * from scratch costs ~90 cJSON_Parse + tree-build passes plus a full print —
+ * and claw_core_context.c calls it once per agent turn (claw_cap_root_tools_collect
+ * / claw_cap_sub_tools_collect), so an uncached build happened on every
+ * single turn regardless of whether anything actually changed since the last
+ * one.
+ *
+ * Only covers the caller's *default* (global) visibility — a session with an
+ * active per-session override (claw_cap_set_session_llm_visible_groups) can
+ * legitimately see a different tool set, so those calls bypass the cache
+ * entirely (checked via claw_cap_get_session_visibility_locked() before
+ * consulting the cache). That is the rare path; almost every session uses
+ * the global visibility list.
+ *
+ * IMPORTANT: claw_core_context.c always free()s the buffer this function
+ * hands back (context.content ownership transfer), so a cache HIT must
+ * return a fresh strdup() of the cached string, never the cached pointer
+ * itself — handing out the same pointer twice would be a double free the
+ * next time both callers free their "own" copy.
+ *
+ * Invalidated (cleared, not rebuilt — rebuilt lazily on next use) by every
+ * function that can change what this computes: claw_cap_register_group()
+ * (via the enable_group() call it makes when already started),
+ * claw_cap_enable_group(), claw_cap_disable_group(), claw_cap_unregister_group()
+ * (also covers claw_cap_unregister(), which forwards to it), and
+ * claw_cap_set_llm_visible_groups(). Each invalidates unconditionally near
+ * the top rather than only on their actual-mutation return paths — those
+ * functions have several early-return no-op/not-found paths, and clearing a
+ * still-valid cache in one of those rare cases just costs one wasted rebuild
+ * on the next call, which is far cheaper than risking a missed invalidation.
+ */
+#define CLAW_CAP_TOOLS_CACHE_SLOTS 4 /* 2 caller classes x 2 wrap_for_responses_api variants */
+static char *s_tools_json_cache[CLAW_CAP_TOOLS_CACHE_SLOTS];
+
+static inline int claw_cap_tools_cache_slot(claw_cap_caller_t caller, bool wrap_for_responses_api)
+{
+    int caller_idx = (caller == CLAW_CAP_CALLER_SUB_AGENT) ? 1 : 0;
+    return caller_idx * 2 + (wrap_for_responses_api ? 1 : 0);
+}
+
+/* Defined after claw_cap_lock()/claw_cap_unlock() below. */
+static void claw_cap_invalidate_tools_cache(void);
+
 typedef enum {
     CLAW_CAP_AUTH_OK = 0,
     CLAW_CAP_AUTH_NOT_AVAILABLE,
@@ -207,6 +252,33 @@ static void claw_cap_lock(void)
 static void claw_cap_unlock(void)
 {
     xSemaphoreGive(s_runtime.mutex);
+}
+
+static void claw_cap_invalidate_tools_cache(void)
+{
+    claw_cap_lock();
+    for (int i = 0; i < CLAW_CAP_TOOLS_CACHE_SLOTS; i++) {
+        free(s_tools_json_cache[i]);
+        s_tools_json_cache[i] = NULL;
+    }
+    claw_cap_unlock();
+}
+
+/* Stores a copy of a freshly-built tools JSON into the cache (if cacheable)
+ * and hands back the original pointer unchanged — the caller still owns and
+ * frees it, only the cached copy is new. */
+static char *claw_cap_tools_cache_store_and_return(int cache_slot, char *json)
+{
+    if (cache_slot >= 0 && json) {
+        char *copy = claw_cap_strdup(json);
+        if (copy) {
+            claw_cap_lock();
+            free(s_tools_json_cache[cache_slot]);
+            s_tools_json_cache[cache_slot] = copy;
+            claw_cap_unlock();
+        }
+    }
+    return json;
 }
 
 static void claw_cap_free_group_ids(char **group_ids, size_t group_count)
@@ -346,6 +418,23 @@ char *claw_cap_build_llm_tools_json(const claw_cap_call_context_t *ctx,
         return NULL;
     }
 
+    claw_cap_caller_t caller = ctx ? ctx->caller : CLAW_CAP_CALLER_SYSTEM;
+    const char *session_id = (ctx && ctx->session_id && ctx->session_id[0]) ? ctx->session_id : NULL;
+    int cache_slot = (caller == CLAW_CAP_CALLER_AGENT || caller == CLAW_CAP_CALLER_SUB_AGENT) ?
+                     claw_cap_tools_cache_slot(caller, wrap_for_responses_api) : -1;
+
+    if (cache_slot >= 0) {
+        claw_cap_lock();
+        if (session_id && claw_cap_get_session_visibility_locked(session_id)) {
+            cache_slot = -1; /* per-session visibility override: bypass the cache */
+        } else if (s_tools_json_cache[cache_slot]) {
+            char *cached = claw_cap_strdup(s_tools_json_cache[cache_slot]);
+            claw_cap_unlock();
+            return cached;
+        }
+        claw_cap_unlock();
+    }
+
     raw_tools = cJSON_CreateArray();
     if (!raw_tools) {
         return NULL;
@@ -390,7 +479,7 @@ char *claw_cap_build_llm_tools_json(const claw_cap_call_context_t *ctx,
     if (!wrap_for_responses_api) {
         raw_tools_json = cJSON_PrintUnformatted(raw_tools);
         cJSON_Delete(raw_tools);
-        return raw_tools_json;
+        return claw_cap_tools_cache_store_and_return(cache_slot, raw_tools_json);
     }
 
     wrapped_tools = cJSON_CreateArray();
@@ -435,7 +524,7 @@ char *claw_cap_build_llm_tools_json(const claw_cap_call_context_t *ctx,
     raw_tools_json = cJSON_PrintUnformatted(wrapped_tools);
     cJSON_Delete(wrapped_tools);
     cJSON_Delete(raw_tools);
-    return raw_tools_json;
+    return claw_cap_tools_cache_store_and_return(cache_slot, raw_tools_json);
 }
 
 esp_err_t claw_cap_call_from_core(const char *cap_name,
@@ -1294,6 +1383,7 @@ esp_err_t claw_cap_set_llm_visible_groups(const char *const *group_ids, size_t c
     s_runtime.llm_visible_group_ids = copied_group_ids;
     s_runtime.llm_visible_group_count = count;
     claw_cap_unlock();
+    claw_cap_invalidate_tools_cache();
 
     ESP_LOGI(TAG, "Configured %u LLM-visible capability groups", (unsigned)count);
     return ESP_OK;
@@ -1494,6 +1584,12 @@ esp_err_t claw_cap_enable_group(const char *group_id)
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* Unconditional and up front: this function has several early-return
+     * no-op/not-found paths below, and clearing a still-valid cache in one
+     * of those rare cases just costs one wasted rebuild next time — far
+     * cheaper than risking a missed invalidation on the paths that matter. */
+    claw_cap_invalidate_tools_cache();
+
     claw_cap_lock();
     group_slot_index = claw_cap_find_group_slot_index_locked(group_id);
     if (group_slot_index < 0) {
@@ -1541,6 +1637,8 @@ esp_err_t claw_cap_disable_group(const char *group_id)
         return ESP_ERR_INVALID_ARG;
     }
 
+    claw_cap_invalidate_tools_cache();
+
     claw_cap_lock();
     group_slot_index = claw_cap_find_group_slot_index_locked(group_id);
     if (group_slot_index < 0) {
@@ -1577,6 +1675,8 @@ esp_err_t claw_cap_unregister_group(const char *group_id, uint32_t timeout_ms)
     if (!group_id || !group_id[0]) {
         return ESP_ERR_INVALID_ARG;
     }
+
+    claw_cap_invalidate_tools_cache();
 
     claw_cap_lock();
     group_slot_index = claw_cap_find_group_slot_index_locked(group_id);

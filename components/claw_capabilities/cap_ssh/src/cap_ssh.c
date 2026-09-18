@@ -23,6 +23,7 @@
 
 #include "cJSON.h"
 #include "claw_cap.h"
+#include "claw_task.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -483,8 +484,21 @@ static esp_err_t cap_ssh_start_server(void)
     if (s_ssh.server_task) {
         return ESP_OK; /* already running; v1 doesn't support live reconfigure-restart */
     }
-    BaseType_t ok = xTaskCreate(cap_ssh_server_task, "cap_ssh", CAP_SSH_SERVER_STACK, NULL, 5,
-                                &s_ssh.server_task);
+    /* claw_task_create + PREFER_PSRAM, not plain xTaskCreate: every other
+     * sizeable task in this codebase (claw_core, cap_scheduler,
+     * claw_event_router, cap_lua_async) puts its stack in PSRAM (~92% free
+     * on this board) rather than internal RAM (~47% free) — a plain
+     * xTaskCreate here was the one exception, statically eating ~10% of the
+     * internal-RAM budget for a stack wolfSSH's handshake doesn't need to be
+     * in internal RAM at all. */
+    claw_task_config_t task_config = {
+        .name = "cap_ssh",
+        .stack_size = CAP_SSH_SERVER_STACK,
+        .priority = 5,
+        .core_id = tskNO_AFFINITY,
+        .stack_policy = CLAW_TASK_STACK_PREFER_PSRAM,
+    };
+    BaseType_t ok = claw_task_create(&task_config, cap_ssh_server_task, NULL, &s_ssh.server_task);
     return ok == pdPASS ? ESP_OK : ESP_ERR_NO_MEM;
 }
 

@@ -578,15 +578,18 @@ esp_err_t app_config_save(const app_config_t *config)
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* One NVS open/commit/close for all fields, not one per field: with
+     * settings_store_set_string() in a loop, every save — a web UI save, a
+     * single ssh_configure/set_timezone/mqtt_configure call, etc. — paid a
+     * full flash commit per field even though only one or two actually
+     * changed. */
+    settings_store_kv_t items[sizeof(s_fields) / sizeof(s_fields[0])];
     for (size_t i = 0; i < sizeof(s_fields) / sizeof(s_fields[0]); ++i) {
-        esp_err_t err = settings_store_set_string(s_fields[i].key,
-                                                  app_config_field_cptr(config, &s_fields[i]));
-        if (err != ESP_OK) {
-            return err;
-        }
+        items[i].key = s_fields[i].key;
+        items[i].value = app_config_field_cptr(config, &s_fields[i]);
     }
 
-    return settings_store_commit();
+    return settings_store_set_strings(items, sizeof(s_fields) / sizeof(s_fields[0]));
 }
 
 esp_err_t app_config_validate_wifi(const app_config_t *config, const char **message)

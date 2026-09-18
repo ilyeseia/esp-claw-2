@@ -86,15 +86,15 @@ esp_err_t app_config_save(const app_config_t *config)
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* One NVS open/commit/close for all fields instead of one per field —
+     * see edge_agent's app_config_save() for the same fix and rationale. */
+    settings_store_kv_t items[sizeof(s_fields) / sizeof(s_fields[0])];
     for (size_t i = 0; i < sizeof(s_fields) / sizeof(s_fields[0]); ++i) {
-        esp_err_t err = settings_store_set_string(s_fields[i].key,
-                                                  app_config_field_cptr(config, &s_fields[i]));
-        if (err != ESP_OK) {
-            return err;
-        }
+        items[i].key = s_fields[i].key;
+        items[i].value = app_config_field_cptr(config, &s_fields[i]);
     }
 
-    return settings_store_commit();
+    return settings_store_set_strings(items, sizeof(s_fields) / sizeof(s_fields[0]));
 }
 
 void app_config_to_claw(const app_config_t *config, app_claw_config_t *out)
