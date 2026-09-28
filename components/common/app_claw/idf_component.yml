@@ -84,6 +84,16 @@ dependencies:
       - if: $CONFIG{APP_CLAW_CAP_HTTP_REQUEST} == True
     path: ../../claw_capabilities/cap_http_request
 
+  cap_home_assistant:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_HOME_ASSISTANT} == True
+    path: ../../claw_capabilities/cap_home_assistant
+
+  cap_hardware:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_HARDWARE} == True
+    path: ../../claw_capabilities/cap_hardware
+
   cap_web_search:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_WEB_SEARCH} == True

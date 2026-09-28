@@ -1,0 +1,9 @@
+idf_component_register(
+    SRCS
+        "src/cap_home_assistant.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        claw_cap
+        esp_http_client
+)

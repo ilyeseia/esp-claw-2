@@ -32,6 +32,12 @@ const NetworkPage = lazy(() =>
 );
 const McpPage = lazy(() => import('./pages/McpPage').then((mod) => ({ default: mod.McpPage })));
 const SshPage = lazy(() => import('./pages/SshPage').then((mod) => ({ default: mod.SshPage })));
+const HomeAssistantPage = lazy(() =>
+  import('./pages/HomeAssistantPage').then((mod) => ({ default: mod.HomeAssistantPage })),
+);
+const HardwarePage = lazy(() =>
+  import('./pages/HardwarePage').then((mod) => ({ default: mod.HardwarePage })),
+);
 const MemoryPage = lazy(() =>
   import('./pages/MemoryPage').then((mod) => ({ default: mod.MemoryPage })),
 );
@@ -287,6 +293,16 @@ const App: Component = () => {
               </Show>
               <Show when={currentTab() === 'ssh'}>
                 <SshPage
+                  onRestartRequest={() => void handleRestartRequest({ reloadOnSuccess: true })}
+                />
+              </Show>
+              <Show when={currentTab() === 'home_assistant'}>
+                <HomeAssistantPage
+                  onRestartRequest={() => void handleRestartRequest({ reloadOnSuccess: true })}
+                />
+              </Show>
+              <Show when={currentTab() === 'hardware'}>
+                <HardwarePage
                   onRestartRequest={() => void handleRestartRequest({ reloadOnSuccess: true })}
                 />
               </Show>

@@ -25,6 +25,8 @@ export const en = {
   navNetwork: 'Network',
   navMcp: 'MCP Server',
   navSsh: 'SSH',
+  navHomeAssistant: 'Home Assistant',
+  navHardware: 'Hardware',
   navMemory: 'Memory',
   navCapabilities: 'Capabilities',
   navLuaModules: 'Lua Modules',
@@ -295,6 +297,24 @@ export const en = {
   sshAuthorizedKeyPlaceholder: 'ecdsa-sha2-nistp256 AAAA... user@host',
   sshNote:
     'A small purpose-built shell (help/list/groups/call <name> <json>), not the full device console — this is the same trust level as physical serial access, gated behind a real SSH handshake. Rotating an already-running server\'s keys needs a restart. Never returns keys back to you once saved.',
+
+  sectionHomeAssistant: 'Home Assistant',
+  haEnabled: 'Enable Home Assistant integration',
+  haEnabledHint: 'Lets the AI list entities, read state and call services against a Home Assistant instance. Takes effect after a restart.',
+  haBaseUrl: 'Base URL',
+  haBaseUrlHint: 'e.g. http://homeassistant.local:8123 — no trailing slash.',
+  haToken: 'Long-lived access token',
+  haTokenHint: 'Create one from your Home Assistant user profile. Sent as a Bearer token over TLS when the URL is https; never logged.',
+  haNote:
+    'Exposes four tools to the AI: ha_get_entities, ha_search_entity, ha_get_state and ha_call_service. Entity IDs are validated before use and responses are size-capped. Like other secrets in this build, the token is readable via /api/config — only expose this device on a trusted network.',
+
+  sectionHardware: 'Hardware',
+  hwPins: 'Configured devices (JSON)',
+  hwPinsHint: 'One entry per logical device the AI may address by name. gpio: pin number, type: switch/sensor/input/output, mode: input/output/analog, allowed: whether writes are permitted.',
+  hwPinsNotArray: 'Must be a JSON array.',
+  hwPinsInvalidJson: 'Not valid JSON.',
+  hwPinsNote:
+    'The AI never receives a raw GPIO number — only the device names listed here, with the permissions you set. A small set of pins that are unsafe to repurpose on this chip (flash/PSRAM) is always blocked regardless of this list. Takes effect after a restart.',
 
   sectionNetworkIp: 'Static IP (Wi-Fi)',
   netUseStatic: 'Use a static IP',

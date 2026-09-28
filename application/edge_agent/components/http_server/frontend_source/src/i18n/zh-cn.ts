@@ -27,6 +27,8 @@ export const zhCn: Dict = {
   navNetwork: '网络',
   navMcp: 'MCP 服务器',
   navSsh: 'SSH',
+  navHomeAssistant: 'Home Assistant',
+  navHardware: '硬件',
   navMemory: '记忆管理',
   navCapabilities: 'Capabilities 管理',
   navLuaModules: 'Lua 模块管理',
@@ -287,6 +289,24 @@ export const zhCn: Dict = {
   sshAuthorizedKeyPlaceholder: 'ecdsa-sha2-nistp256 AAAA... user@host',
   sshNote:
     '这是一个小型的专用 shell（help/list/groups/call <name> <json>），并非完整的设备控制台——其信任级别与物理串口访问相同，且需要通过真实的 SSH 握手才能进入。为已运行的服务器更换密钥需要重启。保存后密钥不会再返回给你查看。',
+
+  sectionHomeAssistant: 'Home Assistant',
+  haEnabled: '启用 Home Assistant 集成',
+  haEnabledHint: '允许 AI 列出实体、读取状态并调用 Home Assistant 实例的服务。需要重启才能生效。',
+  haBaseUrl: '基础 URL',
+  haBaseUrlHint: '例如 http://homeassistant.local:8123 —— 末尾不要加斜杠。',
+  haToken: '长期访问令牌',
+  haTokenHint: '在你的 Home Assistant 用户资料中创建。当 URL 为 https 时以 Bearer 令牌通过 TLS 发送；不会被记录到日志。',
+  haNote:
+    '向 AI 暴露四个工具：ha_get_entities、ha_search_entity、ha_get_state 和 ha_call_service。使用前会校验实体 ID，响应大小也有上限。与本构建中的其他密钥一样，该令牌可通过 /api/config 以明文读取——请仅在受信任的网络中开放此设备。',
+
+  sectionHardware: '硬件',
+  hwPins: '已配置设备（JSON）',
+  hwPinsHint: '每一项对应一个 AI 可按名称访问的逻辑设备。gpio：引脚编号，type：switch/sensor/input/output，mode：input/output/analog，allowed：是否允许写入。',
+  hwPinsNotArray: '必须是一个 JSON 数组。',
+  hwPinsInvalidJson: '不是有效的 JSON。',
+  hwPinsNote:
+    'AI 永远不会拿到原始 GPIO 编号——只能使用这里列出的设备名称，并受你设置的权限限制。此芯片上不适合重新用途的一小部分引脚（flash/PSRAM）无论如何都会被始终阻止。需要重启才能生效。',
 
   sectionNetworkIp: '静态 IP（Wi-Fi）',
   netUseStatic: '使用静态 IP',

@@ -62,6 +62,12 @@
 #if CONFIG_APP_CLAW_CAP_HTTP_REQUEST
 #include "cap_http_request.h"
 #endif
+#if CONFIG_APP_CLAW_CAP_HOME_ASSISTANT
+#include "cap_home_assistant.h"
+#endif
+#if CONFIG_APP_CLAW_CAP_HARDWARE
+#include "cap_hardware.h"
+#endif
 #if CONFIG_APP_CLAW_CAP_WEB_SEARCH
 #include "cap_web_search.h"
 #endif
@@ -706,6 +712,42 @@ static esp_err_t app_cap_register_http_request(const app_claw_config_t *config,
 }
 #endif
 
+#if CONFIG_APP_CLAW_CAP_HOME_ASSISTANT
+static esp_err_t app_cap_prepare_home_assistant(const app_claw_config_t *config,
+                                                const app_claw_storage_paths_t *paths)
+{
+    (void)paths;
+    bool enabled = config->ha_enabled[0] &&
+                   (strcmp(config->ha_enabled, "true") == 0 || strcmp(config->ha_enabled, "1") == 0);
+    return cap_home_assistant_set_config(enabled, config->ha_base_url, config->ha_token);
+}
+
+static esp_err_t app_cap_register_home_assistant(const app_claw_config_t *config,
+                                                 const app_claw_storage_paths_t *paths)
+{
+    (void)config;
+    (void)paths;
+    return cap_home_assistant_register_group();
+}
+#endif
+
+#if CONFIG_APP_CLAW_CAP_HARDWARE
+static esp_err_t app_cap_prepare_hardware(const app_claw_config_t *config,
+                                          const app_claw_storage_paths_t *paths)
+{
+    (void)paths;
+    return cap_hardware_set_pins(config->hw_pins);
+}
+
+static esp_err_t app_cap_register_hardware(const app_claw_config_t *config,
+                                           const app_claw_storage_paths_t *paths)
+{
+    (void)config;
+    (void)paths;
+    return cap_hardware_register_group();
+}
+#endif
+
 #if CONFIG_APP_CLAW_CAP_WEB_SEARCH
 static esp_err_t app_cap_prepare_web_search(const app_claw_config_t *config,
                                             const app_claw_storage_paths_t *paths)
@@ -1114,6 +1156,12 @@ static const app_capability_group_entry_t s_capability_group_entries[] = {
 #if CONFIG_APP_CLAW_CAP_HTTP_REQUEST
     { "cap_http_request", "HTTP Request", "Register HTTP request cap", true, app_cap_prepare_http_request, app_cap_register_http_request },
 #endif
+#if CONFIG_APP_CLAW_CAP_HOME_ASSISTANT
+    { "cap_home_assistant", "Home Assistant", "Register Home Assistant cap", true, app_cap_prepare_home_assistant, app_cap_register_home_assistant },
+#endif
+#if CONFIG_APP_CLAW_CAP_HARDWARE
+    { "cap_hardware", "Hardware", "Register hardware/GPIO cap", true, app_cap_prepare_hardware, app_cap_register_hardware },
+#endif
 #if CONFIG_APP_CLAW_CAP_WEB_SEARCH
     { "cap_web_search", "Web Search", "Register web search cap", true, app_cap_prepare_web_search, app_cap_register_web_search },
 #endif
@@ -1188,6 +1236,12 @@ static const app_capability_group_info_t s_capability_group_infos[] = {
 #endif
 #if CONFIG_APP_CLAW_CAP_HTTP_REQUEST
     { "cap_http_request", "HTTP Request", false },
+#endif
+#if CONFIG_APP_CLAW_CAP_HOME_ASSISTANT
+    { "cap_home_assistant", "Home Assistant", false },
+#endif
+#if CONFIG_APP_CLAW_CAP_HARDWARE
+    { "cap_hardware", "Hardware", false },
 #endif
 #if CONFIG_APP_CLAW_CAP_WEB_SEARCH
     { "cap_web_search", "Web Search", false },

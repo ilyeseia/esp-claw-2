@@ -88,6 +88,10 @@ typedef struct {
     char ssh_enabled[8];
     char ssh_host_private_key_der_b64[3800];
     char ssh_authorized_public_key[1024];
+    char ha_enabled[8];
+    char ha_base_url[APP_CLAW_STR_LEN];
+    char ha_token[APP_CLAW_STR_LEN];
+    char hw_pins[1024];
     char net_use_static[8];
     char net_ip[20];
     char net_gateway[20];

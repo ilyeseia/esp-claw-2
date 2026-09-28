@@ -113,6 +113,13 @@ typedef struct {
                                               * for why this stays under NVS's
                                               * 4000-byte string limit */
     char ssh_authorized_public_key[1024];   /* OpenSSH public key line */
+    /* cap_home_assistant: talks to a Home Assistant instance's REST API. */
+    char ha_enabled[8];                     /* "true" / "false" */
+    char ha_base_url[APP_CONFIG_STR_LEN];   /* e.g. "http://homeassistant.local:8123", no trailing slash */
+    char ha_token[APP_CONFIG_STR_LEN];      /* Home Assistant long-lived access token, secret */
+    /* cap_hardware: operator-defined GPIO/sensor devices the AI may read/control by name.
+     * JSON array, see cap_hardware.h for the exact shape. */
+    char hw_pins[1024];
     char enabled_cap_groups[APP_CONFIG_STR_LEN];
     char llm_visible_cap_groups[APP_CONFIG_STR_LEN];
     char enabled_lua_modules[APP_CONFIG_STR_LEN];

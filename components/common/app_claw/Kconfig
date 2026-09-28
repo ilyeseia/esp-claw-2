@@ -164,6 +164,24 @@ menu "App Claw Config"
                 Enable the HTTP request capability and keep app_claw's direct dependency
                 on cap_http_request.
 
+        config APP_CLAW_CAP_HOME_ASSISTANT
+            bool "Enable Home Assistant integration capability"
+            default y
+            help
+                Enable the cap_home_assistant capability (ha_get_entities, ha_get_state,
+                ha_call_service, ha_search_entity) against a Home Assistant instance's REST
+                API. Off at runtime until "ha_enabled" and a base URL/token are configured
+                via the Web UI or /api/config.
+
+        config APP_CLAW_CAP_HARDWARE
+            bool "Enable hardware/GPIO capability"
+            default y
+            help
+                Enable the cap_hardware capability (gpio_read, gpio_write, sensor_read)
+                against operator-defined devices in the "hw_pins" configuration. The model
+                can only ever address a device the operator already named and marked
+                allowed=true; it never receives a raw GPIO number.
+
         config APP_CLAW_CAP_WEB_SEARCH
             bool "Enable web search capability"
             default y

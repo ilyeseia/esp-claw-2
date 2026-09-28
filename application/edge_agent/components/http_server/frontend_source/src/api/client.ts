@@ -82,6 +82,10 @@ export type AppConfig = {
   ssh_enabled: string;
   ssh_host_private_key_der_b64: string;
   ssh_authorized_public_key: string;
+  ha_enabled: string;
+  ha_base_url: string;
+  ha_token: string;
+  hw_pins: string;
   enabled_cap_groups: string;
   llm_visible_cap_groups: string;
   enabled_lua_modules: string;
@@ -100,6 +104,8 @@ export type ConfigGroup =
   | 'network'
   | 'mcp'
   | 'ssh'
+  | 'home_assistant'
+  | 'hardware'
   | 'capabilities'
   | 'skills'
   | 'time';
@@ -183,6 +189,8 @@ export const GROUP_FIELDS: Record<ConfigGroup, (keyof AppConfig)[]> = {
     'mcp_ctrl_port',
   ],
   ssh: ['ssh_enabled', 'ssh_host_private_key_der_b64', 'ssh_authorized_public_key'],
+  home_assistant: ['ha_enabled', 'ha_base_url', 'ha_token'],
+  hardware: ['hw_pins'],
   capabilities: ['enabled_cap_groups', 'llm_visible_cap_groups'],
   skills: ['enabled_lua_modules'],
   time: ['time_timezone'],

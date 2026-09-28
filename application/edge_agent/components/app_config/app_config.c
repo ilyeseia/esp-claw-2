@@ -104,6 +104,10 @@ typedef struct {
 #define APP_DEFAULT_SSH_ENABLED              "false"
 #define APP_DEFAULT_SSH_HOST_PRIVATE_KEY_DER_B64 ""
 #define APP_DEFAULT_SSH_AUTHORIZED_PUBLIC_KEY ""
+#define APP_DEFAULT_HA_ENABLED               "false"
+#define APP_DEFAULT_HA_BASE_URL              ""
+#define APP_DEFAULT_HA_TOKEN                 ""
+#define APP_DEFAULT_HW_PINS                  "[]"
 #define APP_DEFAULT_ENABLED_CAP_GROUPS       ""
 #define APP_DEFAULT_LLM_VISIBLE_CAP_GROUPS   ""
 #define APP_DEFAULT_ENABLED_LUA_MODULES      ""
@@ -187,6 +191,10 @@ static const app_config_field_t s_fields[] = {
     APP_CONFIG_FIELD(ssh_enabled, "ssh_en", APP_DEFAULT_SSH_ENABLED),
     APP_CONFIG_FIELD(ssh_host_private_key_der_b64, "ssh_hostkey", APP_DEFAULT_SSH_HOST_PRIVATE_KEY_DER_B64),
     APP_CONFIG_FIELD(ssh_authorized_public_key, "ssh_authkey", APP_DEFAULT_SSH_AUTHORIZED_PUBLIC_KEY),
+    APP_CONFIG_FIELD(ha_enabled, "ha_en", APP_DEFAULT_HA_ENABLED),
+    APP_CONFIG_FIELD(ha_base_url, "ha_url", APP_DEFAULT_HA_BASE_URL),
+    APP_CONFIG_FIELD(ha_token, "ha_token", APP_DEFAULT_HA_TOKEN),
+    APP_CONFIG_FIELD(hw_pins, "hw_pins", APP_DEFAULT_HW_PINS),
     APP_CONFIG_FIELD(enabled_cap_groups, "en_cap_groups", APP_DEFAULT_ENABLED_CAP_GROUPS),
     APP_CONFIG_FIELD(llm_visible_cap_groups, "vis_cap_groups", APP_DEFAULT_LLM_VISIBLE_CAP_GROUPS),
     APP_CONFIG_FIELD(enabled_lua_modules, "en_lua_mods", APP_DEFAULT_ENABLED_LUA_MODULES),
@@ -718,6 +726,10 @@ void app_config_to_claw(const app_config_t *config, app_claw_config_t *out)
             sizeof(out->ssh_host_private_key_der_b64));
     strlcpy(out->ssh_authorized_public_key, config->ssh_authorized_public_key,
             sizeof(out->ssh_authorized_public_key));
+    strlcpy(out->ha_enabled, config->ha_enabled, sizeof(out->ha_enabled));
+    strlcpy(out->ha_base_url, config->ha_base_url, sizeof(out->ha_base_url));
+    strlcpy(out->ha_token, config->ha_token, sizeof(out->ha_token));
+    strlcpy(out->hw_pins, config->hw_pins, sizeof(out->hw_pins));
     strlcpy(out->net_use_static, config->net_use_static, sizeof(out->net_use_static));
     strlcpy(out->net_ip, config->net_ip, sizeof(out->net_ip));
     strlcpy(out->net_gateway, config->net_gateway, sizeof(out->net_gateway));

@@ -12,6 +12,8 @@ export type TabId =
   | 'network'
   | 'mcp'
   | 'ssh'
+  | 'home_assistant'
+  | 'hardware'
   | 'memory'
   | 'webim'
   | 'capabilities'
@@ -29,6 +31,8 @@ const [dirtyTabs, setDirtyTabs] = createSignal<Record<TabId, boolean>>({
   network: false,
   mcp: false,
   ssh: false,
+  home_assistant: false,
+  hardware: false,
   memory: false,
   webim: false,
   capabilities: false,

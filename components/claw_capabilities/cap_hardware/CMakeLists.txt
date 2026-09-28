@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS
+        "src/cap_hardware.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        claw_cap
+        esp_driver_gpio
+        esp_adc
+)

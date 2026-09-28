@@ -2,8 +2,10 @@ import {
   Activity,
   Blocks,
   Bot,
+  Cpu,
   DatabaseZap,
   Folder,
+  Home,
   MessageSquareCode,
   MessagesSquare,
   Network,
@@ -34,6 +36,8 @@ const IconVpn: Component = () => <ShieldCheck class={iconClass} />;
 const IconNet: Component = () => <Network class={iconClass} />;
 const IconMcp: Component = () => <Waypoints class={iconClass} />;
 const IconSsh: Component = () => <Terminal class={iconClass} />;
+const IconHomeAssistant: Component = () => <Home class={iconClass} />;
+const IconHardware: Component = () => <Cpu class={iconClass} />;
 const IconMemory: Component = () => <DatabaseZap class={iconClass} />;
 const IconCaps: Component = () => <Blocks class={iconClass} />;
 const IconSkills: Component = () => <SquareFunction class={iconClass} />;
@@ -54,6 +58,8 @@ export type LeafNode = {
     | 'navNetwork'
     | 'navMcp'
     | 'navSsh'
+    | 'navHomeAssistant'
+    | 'navHardware'
     | 'navMemory'
     | 'navCapabilities'
     | 'navLuaModules'
@@ -87,6 +93,8 @@ export const NAV_TREE: NavNode[] = [
       { kind: 'leaf', id: 'network', labelKey: 'navNetwork', icon: IconNet },
       { kind: 'leaf', id: 'mcp', labelKey: 'navMcp', icon: IconMcp },
       { kind: 'leaf', id: 'ssh', labelKey: 'navSsh', icon: IconSsh },
+      { kind: 'leaf', id: 'home_assistant', labelKey: 'navHomeAssistant', icon: IconHomeAssistant },
+      { kind: 'leaf', id: 'hardware', labelKey: 'navHardware', icon: IconHardware },
     ],
   },
   { kind: 'leaf', id: 'memory', labelKey: 'navMemory', icon: IconMemory },
