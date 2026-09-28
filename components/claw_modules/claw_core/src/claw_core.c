@@ -43,6 +43,8 @@ static void claw_core_free_runtime(claw_core_state_t *core)
     claw_llm_runtime_deinit(core->llm_runtime);
     claw_core_llm_config_free(&core->llm_fallback_config);
     claw_llm_runtime_deinit(core->llm_fallback_runtime);
+    claw_core_llm_config_free(&core->llm_fallback2_config);
+    claw_llm_runtime_deinit(core->llm_fallback2_runtime);
     if (core->llm_lock) {
         vSemaphoreDelete(core->llm_lock);
     }
@@ -171,11 +173,32 @@ esp_err_t claw_core_create(const claw_core_config_t *config, claw_core_handle_t 
         return err;
     }
 
+    claw_core_llm_config_t llm_fallback2_config = {0};
+    llm_fallback2_config.api_key = config->fallback2_api_key;
+    llm_fallback2_config.backend_type = config->fallback2_backend_type;
+    llm_fallback2_config.model = config->fallback2_model;
+    llm_fallback2_config.base_url = config->fallback2_base_url;
+    llm_fallback2_config.auth_type = config->fallback2_auth_type;
+    llm_fallback2_config.max_tokens_field = config->fallback2_max_tokens_field;
+    llm_fallback2_config.timeout_ms = config->timeout_ms;
+    llm_fallback2_config.max_tokens = config->max_tokens;
+    llm_fallback2_config.image_max_bytes = config->image_max_bytes;
+    llm_fallback2_config.supports_tools = config->supports_tools;
+    llm_fallback2_config.supports_vision = config->supports_vision;
+    llm_fallback2_config.image_remote_url_only = config->image_remote_url_only;
+    err = claw_core_llm_config_copy(&core->llm_fallback2_config, &llm_fallback2_config);
+    if (err != ESP_OK) {
+        claw_core_free_runtime(core);
+        return err;
+    }
+
     core->initialized = true;
     *out_core = core;
     ESP_LOGI(core->log_tag, "Initialized");
     ESP_LOGI(core->log_tag, "LLM fallback backend: %s",
              claw_core_llm_fallback_config_ready(core) ? core->llm_fallback_config.backend_type : "(none)");
+    ESP_LOGI(core->log_tag, "LLM fallback backend 2: %s",
+             claw_core_llm_fallback2_config_ready(core) ? core->llm_fallback2_config.backend_type : "(none)");
     return ESP_OK;
 }
 
@@ -228,6 +251,27 @@ esp_err_t claw_core_update_llm_config(claw_core_handle_t core,
         return err;
     }
 
+    claw_core_llm_config_t next_fallback2 = {0};
+    claw_core_llm_config_t copied_fallback2 = {0};
+    next_fallback2.api_key = config->fallback2_api_key;
+    next_fallback2.backend_type = config->fallback2_backend_type;
+    next_fallback2.model = config->fallback2_model;
+    next_fallback2.base_url = config->fallback2_base_url;
+    next_fallback2.auth_type = config->fallback2_auth_type;
+    next_fallback2.max_tokens_field = config->fallback2_max_tokens_field;
+    next_fallback2.timeout_ms = config->timeout_ms;
+    next_fallback2.max_tokens = config->max_tokens;
+    next_fallback2.image_max_bytes = config->image_max_bytes;
+    next_fallback2.supports_tools = config->supports_tools;
+    next_fallback2.supports_vision = config->supports_vision;
+    next_fallback2.image_remote_url_only = config->image_remote_url_only;
+    err = claw_core_llm_config_copy(&copied_fallback2, &next_fallback2);
+    if (err != ESP_OK) {
+        claw_core_llm_config_free(&copied);
+        claw_core_llm_config_free(&copied_fallback);
+        return err;
+    }
+
     if (core->llm_lock) {
         xSemaphoreTake(core->llm_lock, portMAX_DELAY);
     }
@@ -239,6 +283,10 @@ esp_err_t claw_core_update_llm_config(claw_core_handle_t core,
     core->llm_fallback_runtime = NULL;
     claw_core_llm_config_free(&core->llm_fallback_config);
     core->llm_fallback_config = copied_fallback;
+    claw_llm_runtime_deinit(core->llm_fallback2_runtime);
+    core->llm_fallback2_runtime = NULL;
+    claw_core_llm_config_free(&core->llm_fallback2_config);
+    core->llm_fallback2_config = copied_fallback2;
     if (core->llm_lock) {
         xSemaphoreGive(core->llm_lock);
     }
@@ -255,6 +303,8 @@ esp_err_t claw_core_update_llm_config(claw_core_handle_t core,
              "configured" : "missing");
     ESP_LOGI(core->log_tag, "LLM fallback backend: %s",
              claw_core_llm_fallback_config_ready(core) ? core->llm_fallback_config.backend_type : "(none)");
+    ESP_LOGI(core->log_tag, "LLM fallback backend 2: %s",
+             claw_core_llm_fallback2_config_ready(core) ? core->llm_fallback2_config.backend_type : "(none)");
     return ESP_OK;
 }
 

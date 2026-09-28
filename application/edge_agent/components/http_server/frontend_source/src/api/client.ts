@@ -28,6 +28,12 @@ export type AppConfig = {
   llm2_base_url: string;
   llm2_auth_type: string;
   llm2_max_tokens_field: string;
+  llm3_api_key: string;
+  llm3_backend_type: string;
+  llm3_model: string;
+  llm3_base_url: string;
+  llm3_auth_type: string;
+  llm3_max_tokens_field: string;
   qq_app_id: string;
   qq_app_secret: string;
   qq_msg_type: string;
@@ -131,6 +137,12 @@ export const GROUP_FIELDS: Record<ConfigGroup, (keyof AppConfig)[]> = {
     'llm2_base_url',
     'llm2_auth_type',
     'llm2_max_tokens_field',
+    'llm3_api_key',
+    'llm3_backend_type',
+    'llm3_model',
+    'llm3_base_url',
+    'llm3_auth_type',
+    'llm3_max_tokens_field',
   ],
   im: [
     'qq_app_id',

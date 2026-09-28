@@ -150,9 +150,9 @@ export const en = {
   llmValidationMaxTokens: 'Max Tokens must be a positive integer.',
   llmValidationImageMaxBytes: 'Default Image Max Bytes must be a positive integer.',
 
-  llmFallbackTitle: 'Fallback LLM (optional)',
+  llmFallbackTitle: 'Fallback LLM 1 (optional)',
   llmFallbackHint:
-    'Tried once, automatically, when the primary backend fails (e.g. rate-limited or unreachable). Leave empty to disable. Shares timeout/max-tokens/vision settings with the primary backend.',
+    'Tried automatically when the primary backend fails or runs out of quota/rate limit. Leave empty to disable. Shares timeout/max-tokens/vision settings with the primary backend. You can add a second fallback below for a 3-model chain.',
   llmFallbackClear: 'Clear fallback',
   llmFallbackApiKey: 'Fallback API Key',
   llmFallbackModel: 'Fallback Model',
@@ -160,6 +160,17 @@ export const en = {
   llmFallbackBaseUrl: 'Fallback Base URL',
   llmFallbackAuthType: 'Fallback Auth Type',
   llmFallbackMaxTokensField: 'Fallback Max Tokens Field',
+
+  llmFallback2Title: 'Fallback LLM 2 (optional)',
+  llmFallback2Hint:
+    'Tried automatically when both the primary and Fallback LLM 1 fail or run out of quota/rate limit (HTTP 429, "insufficient_quota", "rate_limit_error", etc.). Leave empty to disable. Shares timeout/max-tokens/vision settings with the primary backend.',
+  llmFallback2Clear: 'Clear fallback 2',
+  llmFallback2ApiKey: 'Fallback 2 API Key',
+  llmFallback2Model: 'Fallback 2 Model',
+  llmFallback2Backend: 'Fallback 2 Backend',
+  llmFallback2BaseUrl: 'Fallback 2 Base URL',
+  llmFallback2AuthType: 'Fallback 2 Auth Type',
+  llmFallback2MaxTokensField: 'Fallback 2 Max Tokens Field',
 
   sectionIm: 'Instant Messaging (IM)',
   imAdd: 'Add',

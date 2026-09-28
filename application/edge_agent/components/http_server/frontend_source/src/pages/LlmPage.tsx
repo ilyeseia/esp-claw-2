@@ -236,6 +236,12 @@ type LlmForm = {
   llm2_base_url: string;
   llm2_auth_type: string;
   llm2_max_tokens_field: string;
+  llm3_api_key: string;
+  llm3_model: string;
+  llm3_backend_type: string;
+  llm3_base_url: string;
+  llm3_auth_type: string;
+  llm3_max_tokens_field: string;
 };
 
 function isPositiveInteger(value: string): boolean {
@@ -300,6 +306,12 @@ export const LlmPage: Component = () => {
       llm2_base_url: config.llm2_base_url ?? '',
       llm2_auth_type: config.llm2_auth_type ?? '',
       llm2_max_tokens_field: config.llm2_max_tokens_field ?? '',
+      llm3_api_key: config.llm3_api_key ?? '',
+      llm3_model: config.llm3_model ?? '',
+      llm3_backend_type: config.llm3_backend_type ?? '',
+      llm3_base_url: config.llm3_base_url ?? '',
+      llm3_auth_type: config.llm3_auth_type ?? '',
+      llm3_max_tokens_field: config.llm3_max_tokens_field ?? '',
     }),
     fromForm: (form) => ({
       llm_api_key: form.llm_api_key.trim(),
@@ -320,19 +332,33 @@ export const LlmPage: Component = () => {
       llm2_base_url: form.llm2_base_url.trim(),
       llm2_auth_type: form.llm2_auth_type.trim(),
       llm2_max_tokens_field: form.llm2_max_tokens_field.trim(),
+      llm3_api_key: form.llm3_api_key.trim(),
+      llm3_model: form.llm3_model.trim(),
+      llm3_backend_type: form.llm3_backend_type.trim(),
+      llm3_base_url: form.llm3_base_url.trim(),
+      llm3_auth_type: form.llm3_auth_type.trim(),
+      llm3_max_tokens_field: form.llm3_max_tokens_field.trim(),
     }),
   });
   const [validationError, setValidationError] = createSignal<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = createSignal(false);
   const [fallbackOpen, setFallbackOpen] = createSignal(false);
+  const [fallback2Open, setFallback2Open] = createSignal(false);
   const [selectedPreset, setSelectedPreset] = createSignal<PresetKey | null>(null);
   const [selectedFallbackPreset, setSelectedFallbackPreset] = createSignal<PresetKey | null>(null);
+  const [selectedFallback2Preset, setSelectedFallback2Preset] = createSignal<PresetKey | null>(
+    null,
+  );
   const providerLinks = createMemo(() => {
     const key = selectedPreset();
     return key ? getProviderLinks(key) : undefined;
   });
   const fallbackProviderLinks = createMemo(() => {
     const key = selectedFallbackPreset();
+    return key ? getProviderLinks(key) : undefined;
+  });
+  const fallback2ProviderLinks = createMemo(() => {
+    const key = selectedFallback2Preset();
     return key ? getProviderLinks(key) : undefined;
   });
 
@@ -354,6 +380,12 @@ export const LlmPage: Component = () => {
     void tab.form.llm2_base_url;
     void tab.form.llm2_auth_type;
     void tab.form.llm2_max_tokens_field;
+    void tab.form.llm3_api_key;
+    void tab.form.llm3_model;
+    void tab.form.llm3_backend_type;
+    void tab.form.llm3_base_url;
+    void tab.form.llm3_auth_type;
+    void tab.form.llm3_max_tokens_field;
     setValidationError(null);
   });
 
@@ -390,6 +422,26 @@ export const LlmPage: Component = () => {
     tab.setForm('llm2_auth_type', '');
     tab.setForm('llm2_max_tokens_field', '');
     setSelectedFallbackPreset(null);
+  };
+
+  const applyFallback2Preset = (key: PresetKey) => {
+    const preset = PROVIDER_PRESETS[key];
+    tab.setForm('llm3_backend_type', preset.llm_backend_type);
+    tab.setForm('llm3_base_url', preset.llm_base_url);
+    tab.setForm('llm3_auth_type', preset.llm_auth_type);
+    tab.setForm('llm3_max_tokens_field', preset.llm_max_tokens_field);
+    tab.setForm('llm3_model', preset.llm_model);
+    setSelectedFallback2Preset(key);
+  };
+
+  const clearFallback2 = () => {
+    tab.setForm('llm3_api_key', '');
+    tab.setForm('llm3_model', '');
+    tab.setForm('llm3_backend_type', '');
+    tab.setForm('llm3_base_url', '');
+    tab.setForm('llm3_auth_type', '');
+    tab.setForm('llm3_max_tokens_field', '');
+    setSelectedFallback2Preset(null);
   };
 
   const handleSave = async () => {
@@ -646,6 +698,82 @@ export const LlmPage: Component = () => {
                 placeholder={t('llmMaxTokensFieldPlaceholder') as string}
                 value={tab.form.llm2_max_tokens_field}
                 onInput={(event) => tab.setForm('llm2_max_tokens_field', event.currentTarget.value)}
+              />
+            </div>
+          </div>
+        </CollapsibleConfigBlock>
+        <CollapsibleConfigBlock
+          title={t('llmFallback2Title') as string}
+          defaultOpen={false}
+          open={fallback2Open()}
+          onOpenChange={setFallback2Open}
+        >
+          <div class="flex flex-col gap-3 pt-2">
+            <p class="text-[0.78rem] text-[var(--color-text-muted)] m-0">{t('llmFallback2Hint')}</p>
+            <div class="flex flex-col gap-2">
+              <div class="flex flex-wrap gap-2">
+                {PRESET_BUTTONS.map((key) => (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    active={selectedFallback2Preset() === key}
+                    onClick={() => applyFallback2Preset(key)}
+                  >
+                    {presetLabel(key)}
+                  </Button>
+                ))}
+                <Button size="sm" variant="secondary" onClick={clearFallback2}>
+                  {t('llmFallback2Clear') as string}
+                </Button>
+              </div>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <TextInput
+                type="password"
+                label={
+                  <>
+                    {t('llmFallback2ApiKey')}
+                    <Show when={fallback2ProviderLinks()}>
+                      {(links) => (
+                        <LabelLink href={links().consoleUrl}>
+                          {t('llmProviderConsole') as string} ↗
+                        </LabelLink>
+                      )}
+                    </Show>
+                  </>
+                }
+                value={tab.form.llm3_api_key}
+                onInput={(event) => tab.setForm('llm3_api_key', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('llmFallback2Model') as string}
+                value={tab.form.llm3_model}
+                onInput={(event) => tab.setForm('llm3_model', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('llmFallback2Backend') as string}
+                placeholder={t('llmBackendPlaceholder') as string}
+                value={tab.form.llm3_backend_type}
+                onInput={(event) => tab.setForm('llm3_backend_type', event.currentTarget.value)}
+              />
+              <TextInput
+                type="url"
+                label={t('llmFallback2BaseUrl') as string}
+                placeholder={t('llmBaseUrlPlaceholder') as string}
+                value={tab.form.llm3_base_url}
+                onInput={(event) => tab.setForm('llm3_base_url', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('llmFallback2AuthType') as string}
+                placeholder={t('llmAuthTypePlaceholder') as string}
+                value={tab.form.llm3_auth_type}
+                onInput={(event) => tab.setForm('llm3_auth_type', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('llmFallback2MaxTokensField') as string}
+                placeholder={t('llmMaxTokensFieldPlaceholder') as string}
+                value={tab.form.llm3_max_tokens_field}
+                onInput={(event) => tab.setForm('llm3_max_tokens_field', event.currentTarget.value)}
               />
             </div>
           </div>

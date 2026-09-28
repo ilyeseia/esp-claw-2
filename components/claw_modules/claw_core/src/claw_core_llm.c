@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "esp_log.h"
 
@@ -242,6 +243,16 @@ bool claw_core_llm_fallback_config_ready(claw_core_state_t *core)
            core->llm_fallback_config.model && core->llm_fallback_config.model[0];
 }
 
+bool claw_core_llm_fallback2_config_ready(claw_core_state_t *core)
+{
+    if (!core) {
+        return false;
+    }
+    return core->llm_fallback2_config.backend_type && core->llm_fallback2_config.backend_type[0] &&
+           core->llm_fallback2_config.base_url && core->llm_fallback2_config.base_url[0] &&
+           core->llm_fallback2_config.model && core->llm_fallback2_config.model[0];
+}
+
 static esp_err_t claw_core_llm_ensure_fallback_runtime_locked(claw_core_handle_t core,
                                                                char **out_error_message)
 {
@@ -252,6 +263,49 @@ static esp_err_t claw_core_llm_ensure_fallback_runtime_locked(claw_core_handle_t
         return ESP_OK;
     }
     return claw_core_llm_init(&core->llm_fallback_config, &core->llm_fallback_runtime, out_error_message);
+}
+
+static esp_err_t claw_core_llm_ensure_fallback2_runtime_locked(claw_core_handle_t core,
+                                                                char **out_error_message)
+{
+    if (!core || !out_error_message) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (core->llm_fallback2_runtime) {
+        return ESP_OK;
+    }
+    return claw_core_llm_init(&core->llm_fallback2_config, &core->llm_fallback2_runtime, out_error_message);
+}
+
+/* The HTTP transport (claw_llm_http_transport.c) collapses every non-200
+ * response into ESP_FAIL, but it does encode the numeric status and the
+ * provider's own error text into *out_error_message as "HTTP <status>: ...".
+ * Recognize a quota/rate-limit-exhausted backend from that text so the
+ * fallback chain can report *why* it is moving to the next model, without
+ * threading a new structured error type through every backend's vtable.
+ * Covers OpenAI/DeepSeek/Qwen-style 429 + "insufficient_quota"/"rate_limit"
+ * and Anthropic's "rate_limit_error", plus a plain-text "quota" mention for
+ * backends whose JSON error shape isn't one of the above. */
+static bool claw_core_llm_error_is_quota_exceeded(const char *error_message)
+{
+    int status = 0;
+
+    if (!error_message) {
+        return false;
+    }
+    if (sscanf(error_message, "HTTP %d", &status) == 1 && status == 429) {
+        return true;
+    }
+    return strcasestr(error_message, "insufficient_quota") != NULL ||
+           strcasestr(error_message, "rate_limit") != NULL ||
+           strcasestr(error_message, "rate limit") != NULL ||
+           strcasestr(error_message, "quota") != NULL;
+}
+
+static const char *claw_core_llm_error_reason(const char *error_message)
+{
+    return claw_core_llm_error_is_quota_exceeded(error_message) ?
+           "quota/rate-limit exceeded" : "error";
 }
 
 esp_err_t claw_core_llm_chat_messages(claw_core_handle_t core,
@@ -302,22 +356,39 @@ esp_err_t claw_core_llm_chat_messages(claw_core_handle_t core,
         err = claw_llm_runtime_chat(core->llm_runtime, &request, out_response, out_error_message);
     }
     if (err != ESP_OK && claw_core_llm_fallback_config_ready(core)) {
-        ESP_LOGW(TAG, "chat_messages: primary backend failed (err=0x%x); trying fallback backend", err);
+        ESP_LOGW(TAG, "chat_messages: primary backend failed (%s, err=0x%x); trying fallback backend 1",
+                 claw_core_llm_error_reason(out_error_message ? *out_error_message : NULL), err);
         if (out_error_message && *out_error_message) {
             free(*out_error_message);
             *out_error_message = NULL;
         }
-        esp_err_t fallback_err = claw_core_llm_ensure_fallback_runtime_locked(core, out_error_message);
-        if (fallback_err == ESP_OK) {
-            fallback_err = claw_llm_runtime_chat(core->llm_fallback_runtime, &request, out_response,
-                                                 out_error_message);
+        err = claw_core_llm_ensure_fallback_runtime_locked(core, out_error_message);
+        if (err == ESP_OK) {
+            err = claw_llm_runtime_chat(core->llm_fallback_runtime, &request, out_response,
+                                        out_error_message);
         }
-        if (fallback_err == ESP_OK) {
-            ESP_LOGI(TAG, "chat_messages: fallback backend succeeded");
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "chat_messages: fallback backend 1 succeeded");
         } else {
-            ESP_LOGE(TAG, "chat_messages: fallback backend also failed err=0x%x", fallback_err);
+            ESP_LOGW(TAG, "chat_messages: fallback backend 1 failed (%s, err=0x%x)",
+                     claw_core_llm_error_reason(out_error_message ? *out_error_message : NULL), err);
         }
-        err = fallback_err;
+    }
+    if (err != ESP_OK && claw_core_llm_fallback2_config_ready(core)) {
+        if (out_error_message && *out_error_message) {
+            free(*out_error_message);
+            *out_error_message = NULL;
+        }
+        err = claw_core_llm_ensure_fallback2_runtime_locked(core, out_error_message);
+        if (err == ESP_OK) {
+            err = claw_llm_runtime_chat(core->llm_fallback2_runtime, &request, out_response,
+                                        out_error_message);
+        }
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "chat_messages: fallback backend 2 succeeded");
+        } else {
+            ESP_LOGE(TAG, "chat_messages: fallback backend 2 also failed err=0x%x", err);
+        }
     }
     if (core->llm_lock) {
         xSemaphoreGive(core->llm_lock);
@@ -355,22 +426,39 @@ esp_err_t claw_core_llm_infer_media(claw_core_handle_t core,
         err = claw_llm_runtime_infer_media(core->llm_runtime, request, out_text, out_error_message);
     }
     if (err != ESP_OK && claw_core_llm_fallback_config_ready(core)) {
-        ESP_LOGW(TAG, "infer_media: primary backend failed (err=0x%x); trying fallback backend", err);
+        ESP_LOGW(TAG, "infer_media: primary backend failed (%s, err=0x%x); trying fallback backend 1",
+                 claw_core_llm_error_reason(out_error_message ? *out_error_message : NULL), err);
         if (out_error_message && *out_error_message) {
             free(*out_error_message);
             *out_error_message = NULL;
         }
-        esp_err_t fallback_err = claw_core_llm_ensure_fallback_runtime_locked(core, out_error_message);
-        if (fallback_err == ESP_OK) {
-            fallback_err = claw_llm_runtime_infer_media(core->llm_fallback_runtime, request, out_text,
-                                                        out_error_message);
+        err = claw_core_llm_ensure_fallback_runtime_locked(core, out_error_message);
+        if (err == ESP_OK) {
+            err = claw_llm_runtime_infer_media(core->llm_fallback_runtime, request, out_text,
+                                               out_error_message);
         }
-        if (fallback_err == ESP_OK) {
-            ESP_LOGI(TAG, "infer_media: fallback backend succeeded");
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "infer_media: fallback backend 1 succeeded");
         } else {
-            ESP_LOGE(TAG, "infer_media: fallback backend also failed err=0x%x", fallback_err);
+            ESP_LOGW(TAG, "infer_media: fallback backend 1 failed (%s, err=0x%x)",
+                     claw_core_llm_error_reason(out_error_message ? *out_error_message : NULL), err);
         }
-        err = fallback_err;
+    }
+    if (err != ESP_OK && claw_core_llm_fallback2_config_ready(core)) {
+        if (out_error_message && *out_error_message) {
+            free(*out_error_message);
+            *out_error_message = NULL;
+        }
+        err = claw_core_llm_ensure_fallback2_runtime_locked(core, out_error_message);
+        if (err == ESP_OK) {
+            err = claw_llm_runtime_infer_media(core->llm_fallback2_runtime, request, out_text,
+                                               out_error_message);
+        }
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "infer_media: fallback backend 2 succeeded");
+        } else {
+            ESP_LOGE(TAG, "infer_media: fallback backend 2 also failed err=0x%x", err);
+        }
     }
     if (core->llm_lock) {
         xSemaphoreGive(core->llm_lock);

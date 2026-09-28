@@ -141,18 +141,25 @@ typedef struct {
     bool supports_tools;
     bool supports_vision;
     bool image_remote_url_only;
-    /* Optional fallback backend. When backend_type/base_url/model are all
-     * non-empty, a chat/media request that fails against the primary backend
-     * is retried once against this backend before the request is reported as
-     * failed. Numeric/behavior knobs (timeout, max_tokens, image size,
+    /* Optional fallback chain: up to two backends tried in order (fallback,
+     * then fallback2) when the previous one in the chain fails. A slot is
+     * enabled when its backend_type/base_url/model are all non-empty; leave
+     * them empty to disable that slot (fallback2 can be enabled independently
+     * of fallback). Numeric/behavior knobs (timeout, max_tokens, image size,
      * supports_tools/vision, image_remote_url_only) are shared with the
-     * primary backend. Leave backend_type/base_url/model empty to disable. */
+     * primary backend for every slot in the chain. */
     const char *fallback_api_key;
     const char *fallback_backend_type;
     const char *fallback_model;
     const char *fallback_base_url;
     const char *fallback_auth_type;
     const char *fallback_max_tokens_field;
+    const char *fallback2_api_key;
+    const char *fallback2_backend_type;
+    const char *fallback2_model;
+    const char *fallback2_base_url;
+    const char *fallback2_auth_type;
+    const char *fallback2_max_tokens_field;
     const char *system_prompt;
     claw_core_persist_context_fn persist_context;
     void *persist_context_user_ctx;

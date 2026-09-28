@@ -46,6 +46,15 @@ typedef struct {
     char llm2_base_url[APP_CLAW_STR_LEN];
     char llm2_auth_type[APP_CLAW_SHORT_STR_LEN];
     char llm2_max_tokens_field[APP_CLAW_SHORT_STR_LEN];
+    /* Third LLM backend in the fallback chain: primary -> llm2 -> llm3.
+     * Same disable condition (backend_type/base_url/model all empty) and
+     * same shared timeout/max_tokens/vision/tools knobs as llm2. */
+    char llm3_api_key[APP_CLAW_STR_LEN];
+    char llm3_backend_type[APP_CLAW_SHORT_STR_LEN];
+    char llm3_model[APP_CLAW_MODEL_LEN];
+    char llm3_base_url[APP_CLAW_STR_LEN];
+    char llm3_auth_type[APP_CLAW_SHORT_STR_LEN];
+    char llm3_max_tokens_field[APP_CLAW_SHORT_STR_LEN];
     char qq_app_id[APP_CLAW_SHORT_STR_LEN];
     char qq_app_secret[APP_CLAW_STR_LEN];
     char qq_msg_type[8];

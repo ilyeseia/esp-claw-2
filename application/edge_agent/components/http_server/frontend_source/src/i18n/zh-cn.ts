@@ -148,9 +148,9 @@ export const zhCn: Dict = {
   llmValidationMaxTokens: '最大 Token 数必须是正整数。',
   llmValidationImageMaxBytes: '默认图片大小上限必须是正整数。',
 
-  llmFallbackTitle: '备用 LLM（可选）',
+  llmFallbackTitle: '备用 LLM 1（可选）',
   llmFallbackHint:
-    '当主后端失败时（如触发限流或不可达）自动重试一次。留空则禁用。超时/最大 Token 数/视觉等设置与主后端共用。',
+    '当主后端失败或额度/速率耗尽时自动重试。留空则禁用。超时/最大 Token 数/视觉等设置与主后端共用。可在下方再添加第二个备用，组成 3 模型链。',
   llmFallbackClear: '清除备用配置',
   llmFallbackApiKey: '备用 API Key',
   llmFallbackModel: '备用模型',
@@ -158,6 +158,17 @@ export const zhCn: Dict = {
   llmFallbackBaseUrl: '备用 Base URL',
   llmFallbackAuthType: '备用鉴权方式',
   llmFallbackMaxTokensField: '备用 Max Tokens 字段名',
+
+  llmFallback2Title: '备用 LLM 2（可选）',
+  llmFallback2Hint:
+    '当主后端与备用 LLM 1 都失败或额度/速率耗尽时（HTTP 429、"insufficient_quota"、"rate_limit_error" 等）自动重试。留空则禁用。超时/最大 Token 数/视觉等设置与主后端共用。',
+  llmFallback2Clear: '清除备用 2 配置',
+  llmFallback2ApiKey: '备用 2 API Key',
+  llmFallback2Model: '备用 2 模型',
+  llmFallback2Backend: '备用 2 后端',
+  llmFallback2BaseUrl: '备用 2 Base URL',
+  llmFallback2AuthType: '备用 2 鉴权方式',
+  llmFallback2MaxTokensField: '备用 2 Max Tokens 字段名',
 
   sectionIm: '即时通讯 (IM)',
   imAdd: '添加',
