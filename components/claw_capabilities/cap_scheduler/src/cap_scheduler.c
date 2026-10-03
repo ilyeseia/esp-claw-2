@@ -798,7 +798,9 @@ esp_err_t cap_scheduler_init(const cap_scheduler_config_t *config)
     {
         esp_err_t err = cap_scheduler_load_from_disk_locked();
 
-        if (err != ESP_OK) {
+        if (err == ESP_ERR_INVALID_RESPONSE) {
+            ESP_LOGW(TAG, "Corrupt schedules file; starting with no schedules");
+        } else if (err != ESP_OK) {
             ESP_LOGE(TAG, "Scheduler init load failed: %s", esp_err_to_name(err));
             cap_scheduler_unlock();
             return err;
