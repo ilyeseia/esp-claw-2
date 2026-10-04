@@ -527,7 +527,11 @@ void app_main(void)
     }
 
     ESP_ERROR_CHECK(app_claw_set_save_config_callback(main_save_claw_config, NULL));
-    ESP_ERROR_CHECK(app_claw_start(s_claw_config));
+    esp_err_t claw_err = app_claw_start(s_claw_config);
+    if (claw_err != ESP_OK) {
+        ESP_LOGE(TAG, "app_claw_start failed (%s); web UI and SSH stay up for recovery",
+                 esp_err_to_name(claw_err));
+    } else {
 #if CONFIG_APP_CLAW_CAP_SYSTEM
     /* Let the set_timezone agent tool (e.g. via Telegram) persist to NVS. */
     ESP_ERROR_CHECK(cap_system_set_timezone_persist_provider(main_persist_timezone, NULL));
@@ -560,6 +564,7 @@ void app_main(void)
         ESP_LOGI(TAG, "MCP server disabled via config");
     }
 #endif
+    }
 
     register_wifi_command();
 

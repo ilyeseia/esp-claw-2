@@ -348,27 +348,56 @@ static esp_err_t cap_scheduler_ensure_parent_dir(const char *path)
 
 static esp_err_t cap_scheduler_write_file(const char *path, const char *content)
 {
+    char tmp_path[CAP_SCHEDULER_PATH_BUF_LEN];
+    char bak_path[CAP_SCHEDULER_PATH_BUF_LEN];
     FILE *file = NULL;
+    size_t content_len;
 
     if (!path || !content) {
         return ESP_ERR_INVALID_ARG;
+    }
+    if (snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", path) >= (int)sizeof(tmp_path) ||
+            snprintf(bak_path, sizeof(bak_path), "%s.bak", path) >= (int)sizeof(bak_path)) {
+        return ESP_ERR_INVALID_SIZE;
     }
     if (cap_scheduler_ensure_parent_dir(path) != ESP_OK) {
         ESP_LOGW(TAG, "ensure parent dir failed for %s", path);
         return ESP_FAIL;
     }
 
-    file = fopen(path, "wb");
+    content_len = strlen(content);
+    file = fopen(tmp_path, "wb");
     if (!file) {
-        cap_scheduler_log_errno_failure("fopen(write)", path);
+        cap_scheduler_log_errno_failure("fopen(write tmp)", tmp_path);
         return ESP_FAIL;
     }
-    if (fwrite(content, 1, strlen(content), file) != strlen(content)) {
-        cap_scheduler_log_errno_failure("fwrite", path);
+    if (fwrite(content, 1, content_len, file) != content_len || fflush(file) != 0 ||
+            fsync(fileno(file)) != 0) {
+        cap_scheduler_log_errno_failure("fwrite/fsync tmp", tmp_path);
         fclose(file);
+        remove(tmp_path);
         return ESP_FAIL;
     }
     fclose(file);
+
+    struct stat st = {0};
+    bool had_primary = stat(path, &st) == 0;
+    if (had_primary) {
+        remove(bak_path);
+        if (rename(path, bak_path) != 0) {
+            cap_scheduler_log_errno_failure("rename primary->bak", path);
+            remove(tmp_path);
+            return ESP_FAIL;
+        }
+    }
+    if (rename(tmp_path, path) != 0) {
+        cap_scheduler_log_errno_failure("rename tmp->primary", tmp_path);
+        if (had_primary) {
+            rename(bak_path, path);
+        }
+        remove(tmp_path);
+        return ESP_FAIL;
+    }
     return ESP_OK;
 }
 
@@ -781,7 +810,7 @@ esp_err_t cap_scheduler_entry_to_json(const cap_scheduler_entry_t *entry, bool i
     return ESP_OK;
 }
 
-esp_err_t cap_scheduler_load_items(const char *path, cap_scheduler_item_t *items, size_t max_items, size_t *out_count)
+static esp_err_t cap_scheduler_load_items_file(const char *path, cap_scheduler_item_t *items, size_t max_items, size_t *out_count)
 {
     char *buf = NULL;
     cJSON *root = NULL;
@@ -929,6 +958,26 @@ esp_err_t cap_scheduler_save_items(const char *path, const cap_scheduler_entry_t
     }
     err = cap_scheduler_write_file(path, rendered);
     free(rendered);
+    return err;
+}
+
+esp_err_t cap_scheduler_load_items(const char *path, cap_scheduler_item_t *items, size_t max_items, size_t *out_count)
+{
+    char bak_path[CAP_SCHEDULER_PATH_BUF_LEN];
+    esp_err_t err;
+
+    err = cap_scheduler_load_items_file(path, items, max_items, out_count);
+    if (err == ESP_OK || err == ESP_ERR_NO_MEM) {
+        return err;
+    }
+    if (snprintf(bak_path, sizeof(bak_path), "%s.bak", path) >= (int)sizeof(bak_path)) {
+        return err;
+    }
+    ESP_LOGW(TAG, "Primary schedules unreadable (%s); trying backup %s", esp_err_to_name(err), bak_path);
+    err = cap_scheduler_load_items_file(bak_path, items, max_items, out_count);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "Recovered %u schedule(s) from backup", (unsigned)*out_count);
+    }
     return err;
 }
 
