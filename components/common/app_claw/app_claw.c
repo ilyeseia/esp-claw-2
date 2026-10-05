@@ -599,6 +599,34 @@ static esp_err_t app_claw_publish_startup_event(void)
 #endif
 
 #if CONFIG_APP_CLAW_CAP_CORE
+static char s_runtime_model_info[384];
+
+static void app_claw_format_runtime_model(const app_claw_config_t *config)
+{
+    snprintf(s_runtime_model_info, sizeof(s_runtime_model_info),
+             "Your underlying model is %s. Fallback 1 model: %s. Fallback 2 model: %s. "
+             "When asked which model you are, state these model names exactly as given here.",
+             config->llm_model[0] ? config->llm_model : "unknown",
+             config->llm2_model[0] ? config->llm2_model : "none",
+             config->llm3_model[0] ? config->llm3_model : "none");
+}
+
+static esp_err_t app_claw_runtime_model_collect(const claw_core_request_t *request,
+                                                claw_core_context_t *out_context,
+                                                void *user_ctx)
+{
+    (void)request;
+    (void)user_ctx;
+    out_context->kind = CLAW_CORE_CONTEXT_KIND_SYSTEM_PROMPT;
+    out_context->content = strdup(s_runtime_model_info);
+    return out_context->content ? ESP_OK : ESP_ERR_NO_MEM;
+}
+
+static const claw_core_context_provider_t s_runtime_model_provider = {
+    .name = "Runtime Model",
+    .collect = app_claw_runtime_model_collect,
+};
+
 static void app_claw_fill_core_config(const app_claw_config_t *config,
                                       uint32_t max_tool_iterations,
                                       claw_core_config_t *core_config)
@@ -810,9 +838,11 @@ esp_err_t app_claw_start(const app_claw_config_t *config)
 #endif
             claw_memory_session_history_provider,
             claw_skill_skills_list_provider,
+            s_runtime_model_provider,
         };
         const char *root_agent_id = NULL;
 
+        app_claw_format_runtime_model(config);
         ESP_LOGI(TAG, "Starting root agent backend=%s base_url=%s model=%s token=%s",
                  config->llm_backend_type[0] ? config->llm_backend_type : "(default)",
                  config->llm_base_url[0] ? config->llm_base_url : "(empty)",
