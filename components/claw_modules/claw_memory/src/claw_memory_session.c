@@ -1437,7 +1437,22 @@ static esp_err_t session_history_append_indexed_record(FILE *data_file,
     entry.offset = offset;
     entry.length = length;
     entry.record_type = (uint8_t)record_type;
-    entry.backend_format = (uint8_t)s_memory.backend_format;
+    {
+        /* Tag the record by the actual shape of the content we just wrote, not by
+         * the primary backend's configured type: a response served by a fallback
+         * backend (e.g. Anthropic-style content blocks) persisted while the
+         * primary is OpenAI-style would otherwise be mis-tagged as OpenAI-shaped,
+         * so session_history_backend_mismatch() would never catch it and the raw
+         * content blocks would be replayed verbatim to a backend that rejects
+         * non-string assistant content. */
+        cJSON *probe = cJSON_Parse(json_text);
+        cJSON *probe_content = probe ? cJSON_GetObjectItem(probe, "content") : NULL;
+
+        entry.backend_format = cJSON_IsArray(probe_content) ?
+                               (uint8_t)CLAW_MEMORY_BACKEND_FORMAT_ANTHROPIC :
+                               (uint8_t)CLAW_MEMORY_BACKEND_FORMAT_OPENAI;
+        cJSON_Delete(probe);
+    }
     if (fwrite(&entry, 1, sizeof(entry), idx_file) != sizeof(entry)) {
         ESP_LOGE(TAG, "write session history idx entry failed");
         err = ESP_FAIL;
